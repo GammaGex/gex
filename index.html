@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Processador de Dados com Geração de TXT</title>
+    <title>Processador de Dados MM_Gex</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -63,7 +63,7 @@
 
         .ratio-item-label input[type="number"], 
         .txt-config-item input[type="text"], 
-        .txt-config-item .txt-num-input { /* Classe específica para o input de número/texto opcional */
+        .txt-config-item .txt-num-input {
             width: 150px; 
             padding: 0.35rem 0.5rem;
             border-radius: 0.25rem;
@@ -74,8 +74,8 @@
             font-size: 0.875rem;
             margin-right: 0.5rem;
         }
-        .txt-config-item .txt-num-input { /* Input para número/texto opcional do TXT */
-             width: 100px; /* Ajustado para acomodar textos maiores como 2F4F4F */
+        .txt-config-item .txt-num-input {
+             width: 100px;
         }
         .ratio-item-label input[type="number"]:disabled {
             background-color: #334155;
@@ -97,9 +97,29 @@
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="bg-slate-900 text-slate-100 flex flex-col items-center min-h-screen p-4 selection:bg-sky-500 selection:text-white">
+<body class="bg-slate-900 text-slate-100 flex flex-col items-center justify-center min-h-screen p-4 selection:bg-sky-500 selection:text-white">
 
-    <div class="bg-slate-800-contrast p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-3xl">
+    <!-- Tela de Login -->
+    <div id="loginOverlay" class="fixed inset-0 bg-slate-900 bg-opacity-95 flex items-center justify-center z-50">
+        <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-sm">
+            <h2 class="text-2xl font-bold text-sky-400 text-center mb-6">Login MM_Gex</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-slate-300 mb-1">Usuário</label>
+                    <input type="text" id="username" class="w-full p-3 bg-slate-700 text-slate-200 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-slate-300 mb-1">Senha</label>
+                    <input type="password" id="password" class="w-full p-3 bg-slate-700 text-slate-200 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                </div>
+            </div>
+            <p id="loginError" class="text-red-400 text-sm text-center h-5 mt-4"></p>
+            <button id="loginButton" class="w-full mt-4 bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-lg shadow-md transform hover:scale-105 transition-all">Entrar</button>
+        </div>
+    </div>
+    
+    <!-- Container Principal do Aplicativo (inicialmente oculto) -->
+    <div id="appContainer" class="hidden bg-slate-800-contrast p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-3xl">
         <header class="mb-6 sm:mb-8 text-center">
             <h1 class="text-2xl sm:text-3xl font-bold text-sky-400">Processador de Dados MM_Gex</h1>
             <p class="text-sm text-slate-400 mt-1">Cole os dados, analise, defina ratios, configure e gere arquivos TXT.</p>
@@ -166,6 +186,47 @@
     </div>
 
     <script>
+        // ---- INÍCIO DA SEÇÃO DE LOGIN ----
+        const loginOverlay = document.getElementById('loginOverlay');
+        const appContainer = document.getElementById('appContainer');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const loginButton = document.getElementById('loginButton');
+        const loginError = document.getElementById('loginError');
+
+        // --- Altere o usuário e a senha aqui ---
+        const correctUser = "GEX";
+        const correctPass = "Qwerty@123";
+        // ------------------------------------
+
+        function attemptLogin() {
+            const user = usernameInput.value;
+            const pass = passwordInput.value;
+
+            if (user === correctUser && pass === correctPass) {
+                // Sucesso
+                loginOverlay.classList.add('hidden');
+                appContainer.classList.remove('hidden');
+            } else {
+                // Falha
+                loginError.textContent = "Usuário ou senha inválidos.";
+                // Limpa a mensagem de erro após 3 segundos
+                setTimeout(() => {
+                    loginError.textContent = "";
+                }, 3000);
+            }
+        }
+
+        loginButton.addEventListener('click', attemptLogin);
+        passwordInput.addEventListener('keyup', (event) => {
+            if (event.key === 'Enter') {
+                attemptLogin();
+            }
+        });
+        // ---- FIM DA SEÇÃO DE LOGIN ----
+
+        
+        // ---- CÓDIGO DO APLICATIVO PRINCIPAL (sem alterações) ----
         const rawDataTextarea = document.getElementById('rawData');
         const analyzeFieldsButton = document.getElementById('analyzeFieldsButton');
         const fieldsSelectionSection = document.getElementById('fieldsSelectionSection');
@@ -532,7 +593,7 @@
                     txtNumInput.className = 'txt-num-input'; 
                     txtNumInput.dataset.originalField = fieldName;
                     txtNumInput.id = `txt-num-${cleanFieldName}`;
-                    txtNumInput.value = ''; // MODIFICAÇÃO: Valor padrão removido
+                    txtNumInput.value = ''; 
                     itemDiv.appendChild(txtNumInput);
                     
                     txtConfigContainer.appendChild(itemDiv);
@@ -703,7 +764,7 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = 'mm_gex_configs.json'; // Nome do arquivo de config atualizado
+            link.download = 'mm_gex_configs.json'; 
             document.body.appendChild(link); 
             link.click();
             document.body.removeChild(link);
