@@ -1,1 +1,718 @@
-<iframe src="https://www.gexbot.com/" width="1024" height="768" style="border:1px solid #ccc;"></iframe>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processador de Dados com Geração de TXT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .bg-slate-800-contrast {
+            background-color: #1e293b;
+        }
+        .text-slate-200-contrast {
+            color: #e2e8f0;
+        }
+        .placeholder-slate-500-contrast::placeholder {
+            color: #64748b;
+        }
+        #fieldsCheckboxesContainer, #ratiosInputContainer, #txtConfigContainer {
+            max-height: 150px; 
+            overflow-y: auto;
+            border: 1px solid #334155; 
+            padding: 0.75rem; 
+            border-radius: 0.5rem; 
+            background-color: #334155; 
+        }
+        .checkbox-label {
+            display: block; 
+            margin-bottom: 0.5rem; 
+            color: #cbd5e1; 
+            cursor: pointer;
+        }
+        .checkbox-label input[type="checkbox"] {
+            margin-right: 0.5rem;
+            accent-color: #0ea5e9; 
+        }
+        
+        .ratio-item-label, .txt-config-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.75rem; 
+            color: #cbd5e1; 
+        }
+        .ratio-item-label input[type="checkbox"], .txt-config-item .original-field-name {
+            margin-right: 0.75rem;
+            accent-color: #0ea5e9;
+            flex-shrink: 0;
+        }
+        .ratio-item-label .ratio-ticker-name, .txt-config-item .original-field-name {
+            width: 130px; 
+            margin-right: 0.5rem;
+            flex-shrink: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 0.875rem;
+        }
+         .txt-config-item .original-field-name {
+            font-weight: 500;
+         }
+
+        .ratio-item-label input[type="number"], 
+        .txt-config-item input[type="text"], 
+        .txt-config-item .txt-num-input { /* Classe específica para o input de número/texto opcional */
+            width: 150px; 
+            padding: 0.35rem 0.5rem;
+            border-radius: 0.25rem;
+            background-color: #475569; 
+            color: #e2e8f0; 
+            border: 1px solid #64748b; 
+            flex-shrink: 0;
+            font-size: 0.875rem;
+            margin-right: 0.5rem;
+        }
+        .txt-config-item .txt-num-input { /* Input para número/texto opcional do TXT */
+             width: 100px; /* Ajustado para acomodar textos maiores como 2F4F4F */
+        }
+        .ratio-item-label input[type="number"]:disabled {
+            background-color: #334155;
+            color: #64748b;
+            cursor: not-allowed;
+        }
+        .config-button { 
+            background-color: #6366f1; 
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+        .config-button:hover {
+            background-color: #4f46e5; 
+        }
+        #fileUploadConfig {
+            display: none; 
+        }
+
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-900 text-slate-100 flex flex-col items-center min-h-screen p-4 selection:bg-sky-500 selection:text-white">
+
+    <div class="bg-slate-800-contrast p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-3xl">
+        <header class="mb-6 sm:mb-8 text-center">
+            <h1 class="text-2xl sm:text-3xl font-bold text-sky-400">Processador de Dados MM_Gex</h1>
+            <p class="text-sm text-slate-400 mt-1">Cole os dados, analise, defina ratios, configure e gere arquivos TXT.</p>
+        </header>
+
+        <main>
+            <div class="mb-6 p-4 bg-slate-700 rounded-lg">
+                <h2 class="text-lg font-semibold text-sky-300 mb-3 text-center">Gerenciamento de Configurações</h2>
+                <div class="flex flex-col sm:flex-row justify-center items-center gap-3">
+                    <button id="loadConfigButton" class="config-button text-white font-semibold py-2 px-4 rounded-lg shadow-md transform hover:scale-105 transition-all w-full sm:w-auto">Carregar Configurações</button>
+                    <input type="file" id="fileUploadConfig" accept=".json">
+                    <button id="saveConfigButton" class="config-button text-white font-semibold py-2 px-4 rounded-lg shadow-md transform hover:scale-105 transition-all w-full sm:w-auto">Salvar Configurações Atuais</button>
+                </div>
+                <p id="configStatusMessage" class="text-xs text-slate-400 mt-2 text-center"></p>
+            </div>
+
+            <div class="mb-4">
+                <label for="rawData" class="block text-sm font-medium text-slate-300 mb-1">Dados Brutos do Discord:</label>
+                <textarea id="rawData" rows="4" class="w-full p-3 bg-slate-700 text-slate-200-contrast border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500-contrast"></textarea>
+            </div>
+
+            <div class="mb-4 text-center">
+                <button id="analyzeFieldsButton" class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transform hover:scale-105 transition-all">Analisar Dados</button>
+            </div>
+            
+            <div id="fieldsSelectionSection" class="mb-4 hidden">
+                <label class="block text-sm font-medium text-slate-300 mb-2">1. Selecione os campos que deseja manter:</label>
+                <div id="fieldsCheckboxesContainer"></div>
+                <div class="mt-2 text-right">
+                     <button id="selectAllFields" class="text-xs text-sky-400 hover:text-sky-300 mr-2">Selecionar Todos</button>
+                     <button id="deselectAllFields" class="text-xs text-sky-400 hover:text-sky-300">Desselecionar Todos</button>
+                </div>
+            </div>
+
+            <div id="ratiosSection" class="mb-4 hidden">
+                <label class="block text-sm font-medium text-slate-300 mb-2">2. Para aplicar ratio, marque o ativo e defina o valor:</label>
+                <div id="ratiosInputContainer"></div>
+            </div>
+
+            <div id="generateOutputButtonContainer" class="mb-4 text-center hidden">
+                <button id="generateOutputButton" class="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md transform hover:scale-105 transition-all">Gerar Saída Processada</button>
+            </div>
+
+            <div id="processedDataSection" class="mb-4 hidden">
+                <label for="processedData" class="block text-sm font-medium text-slate-300 mb-1">Dados Processados (Prévia):</label>
+                <textarea id="processedData" rows="4" class="w-full p-3 bg-slate-700 text-slate-200-contrast border border-slate-600 rounded-lg readonly" readonly></textarea>
+            </div>
+            
+            <div id="configureTxtButtonContainer" class="mb-4 text-center hidden">
+                <button id="configureTxtButton" class="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md transform hover:scale-105 transition-all">Configurar e Gerar Arquivos TXT</button>
+            </div>
+
+            <div id="txtConfigurationSection" class="mb-4 hidden">
+                <label class="block text-sm font-medium text-slate-300 mb-2">3. Configure os Nomes dos Campos para os Arquivos TXT:</label>
+                <div id="txtConfigContainer"></div>
+                 <div class="mt-3 text-center">
+                    <button id="downloadTxtFilesButton" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transform hover:scale-105 transition-all mr-2 mb-2">Baixar Arquivos TXT Individuais</button>
+                </div>
+            </div>
+            <div id="downloadLinksArea" class="mt-4 text-sm"></div>
+
+        </main>
+        <footer class="mt-8 text-center"><p class="text-xs text-slate-500">Processador de Dados MM_Gex</p></footer>
+    </div>
+
+    <script>
+        const rawDataTextarea = document.getElementById('rawData');
+        const analyzeFieldsButton = document.getElementById('analyzeFieldsButton');
+        const fieldsSelectionSection = document.getElementById('fieldsSelectionSection');
+        const fieldsCheckboxesContainer = document.getElementById('fieldsCheckboxesContainer');
+        const selectAllFieldsButton = document.getElementById('selectAllFields');
+        const deselectAllFieldsButton = document.getElementById('deselectAllFields');
+        const ratiosSection = document.getElementById('ratiosSection');
+        const ratiosInputContainer = document.getElementById('ratiosInputContainer');
+        const generateOutputButtonContainer = document.getElementById('generateOutputButtonContainer');
+        const generateOutputButton = document.getElementById('generateOutputButton');
+        const processedDataSection = document.getElementById('processedDataSection');
+        const processedDataTextarea = document.getElementById('processedData');
+        const configureTxtButtonContainer = document.getElementById('configureTxtButtonContainer');
+        const configureTxtButton = document.getElementById('configureTxtButton');
+        const txtConfigurationSection = document.getElementById('txtConfigurationSection');
+        const txtConfigContainer = document.getElementById('txtConfigContainer');
+        const downloadTxtFilesButton = document.getElementById('downloadTxtFilesButton');
+        const downloadLinksArea = document.getElementById('downloadLinksArea');
+        const loadConfigButton = document.getElementById('loadConfigButton');
+        const saveConfigButton = document.getElementById('saveConfigButton');
+        const fileUploadConfig = document.getElementById('fileUploadConfig');
+        const configStatusMessage = document.getElementById('configStatusMessage');
+
+        let cachedCleanedLines = []; 
+        let originalFieldOrder = []; 
+        let uniqueTickers = []; 
+        let tickersForRatioDisplay = [];
+        let currentProcessedData = {}; 
+        let loadedConfiguration = null; 
+
+        function parseDataLine(line) {
+            const tickerEndIndex = line.indexOf(':');
+            if (tickerEndIndex === -1) return { ticker: line.trim(), fields: {}, lineFieldOrder: [] };
+            const ticker = line.substring(0, tickerEndIndex + 1).trim();
+            const dataPart = line.substring(tickerEndIndex + 1).trim();
+            const pairs = dataPart.split(',');
+            const fields = {};
+            const lineFieldOrder = [];
+            for (let i = 0; i < pairs.length; i += 2) {
+                const fieldName = pairs[i] ? pairs[i].trim() : null;
+                const fieldValue = pairs[i+1] ? pairs[i+1].trim() : null;
+                if (fieldName && fieldValue !== null) {
+                    fields[fieldName] = fieldValue;
+                    if (!lineFieldOrder.includes(fieldName)) lineFieldOrder.push(fieldName);
+                } else if (fieldName && fieldValue === null && i + 1 >= pairs.length) {
+                    fields[fieldName] = ""; 
+                    if (!lineFieldOrder.includes(fieldName)) lineFieldOrder.push(fieldName);
+                }
+            }
+            return { ticker, fields, lineFieldOrder };
+        }
+
+        function applyLoadedConfigStep1() {
+            if (loadedConfiguration && loadedConfiguration.selectedFieldsStep1) {
+                const allFieldCheckboxes = fieldsCheckboxesContainer.querySelectorAll('input[type="checkbox"]');
+                allFieldCheckboxes.forEach(cb => {
+                    cb.checked = loadedConfiguration.selectedFieldsStep1.includes(cb.value);
+                });
+            }
+        }
+
+        function applyLoadedConfigStep2() {
+            if (loadedConfiguration && loadedConfiguration.ratioSettingsStep2) {
+                ratiosInputContainer.querySelectorAll('.ratio-item-label').forEach(item => {
+                    const checkbox = item.querySelector('input[type="checkbox"]');
+                    const input = item.querySelector('input[type="number"]');
+                    const ticker = checkbox.dataset.ticker;
+                    if (loadedConfiguration.ratioSettingsStep2[ticker]) {
+                        const config = loadedConfiguration.ratioSettingsStep2[ticker];
+                        checkbox.checked = config.applyRatio;
+                        input.value = config.ratioValue || '1';
+                        input.disabled = !config.applyRatio;
+                    } else { 
+                        checkbox.checked = false;
+                        input.value = '1';
+                        input.disabled = true;
+                    }
+                });
+            }
+        }
+        
+        function applyLoadedConfigStep3() {
+            if (loadedConfiguration && loadedConfiguration.txtConfigsStep3) {
+                txtConfigContainer.querySelectorAll('.txt-config-item').forEach(item => {
+                    const originalField = item.querySelector('input[type="text"]').dataset.originalField;
+                    const txtNameInput = item.querySelector('input[type="text"]');
+                    const txtNumInput = item.querySelector('.txt-num-input'); 
+
+                    if (loadedConfiguration.txtConfigsStep3[originalField]) {
+                        const config = loadedConfiguration.txtConfigsStep3[originalField];
+                        txtNameInput.value = config.txtName || originalField;
+                        txtNumInput.value = config.txtNum || '2F4F4F'; // Aplica o default aqui também se carregado e vazio
+                    } else { 
+                        txtNameInput.value = originalField;
+                        txtNumInput.value = '2F4F4F'; // Default para novos campos não na config
+                    }
+                });
+            } else { // Se não há config salva para Etapa 3, aplica o default
+                 txtConfigContainer.querySelectorAll('.txt-config-item .txt-num-input').forEach(input => {
+                    input.value = '2F4F4F';
+                });
+            }
+        }
+
+        analyzeFieldsButton.addEventListener('click', () => {
+            const inputText = rawDataTextarea.value;
+            const lines = inputText.split('\n');
+            cachedCleanedLines = [];
+            const allFields = new Set();
+            const fieldOrderMap = new Map();
+            const tickersSet = new Set();
+
+            lines.forEach(line => {
+                const trimmedLine = line.trim();
+                if (trimmedLine.startsWith('$')) {
+                    cachedCleanedLines.push(trimmedLine);
+                    const { ticker, fields, lineFieldOrder } = parseDataLine(trimmedLine);
+                    tickersSet.add(ticker); 
+                    lineFieldOrder.forEach(fieldName => {
+                        allFields.add(fieldName);
+                        if (!fieldOrderMap.has(fieldName)) fieldOrderMap.set(fieldName, fieldOrderMap.size);
+                    });
+                }
+            });
+            
+            originalFieldOrder = Array.from(allFields).sort((a, b) => (fieldOrderMap.get(a) || 0) - (fieldOrderMap.get(b) || 0));
+            uniqueTickers = Array.from(tickersSet);
+
+            const preferredTickerOrder = ['$SPX:', '$SPY:', '$GLD:']; 
+            uniqueTickers.sort((a, b) => {
+                const indexA = preferredTickerOrder.indexOf(a);
+                const indexB = preferredTickerOrder.indexOf(b);
+                if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                if (indexA !== -1) return -1;
+                if (indexB !== -1) return 1;
+                return a.localeCompare(b);
+            });
+
+            const excludedTickersForRatio = ['$ES1!:', '$NQ1!:'];
+            tickersForRatioDisplay = uniqueTickers.filter(ticker => !excludedTickersForRatio.includes(ticker));
+
+            fieldsCheckboxesContainer.innerHTML = ''; 
+            if (originalFieldOrder.length === 0 && uniqueTickers.length === 0) {
+                fieldsCheckboxesContainer.innerHTML = '<p class="text-slate-400 text-sm">Nenhum dado válido (ticker ou campo) encontrado.</p>';
+                fieldsSelectionSection.classList.remove('hidden');
+                ratiosSection.classList.add('hidden');
+                generateOutputButtonContainer.classList.add('hidden');
+                processedDataSection.classList.add('hidden');
+                configureTxtButtonContainer.classList.add('hidden');
+                txtConfigurationSection.classList.add('hidden');
+                configStatusMessage.textContent = "Análise concluída. Nenhuma configuração carregada ou dados insuficientes.";
+                return;
+            }
+
+            if (originalFieldOrder.length > 0) {
+                originalFieldOrder.forEach(fieldName => {
+                    const checkboxId = `checkbox-field-${fieldName.replace(/\s+/g, '-')}`;
+                    const label = document.createElement('label');
+                    label.htmlFor = checkboxId;
+                    label.className = 'checkbox-label';
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.id = checkboxId;
+                    checkbox.value = fieldName;
+                    checkbox.checked = true; 
+                    label.appendChild(checkbox);
+                    label.appendChild(document.createTextNode(fieldName));
+                    fieldsCheckboxesContainer.appendChild(label);
+                });
+                applyLoadedConfigStep1(); 
+                fieldsSelectionSection.classList.remove('hidden');
+            } else {
+                 fieldsCheckboxesContainer.innerHTML = '<p class="text-slate-400 text-sm">Nenhum campo de dados encontrado.</p>';
+                 fieldsSelectionSection.classList.remove('hidden');
+            }
+
+            ratiosInputContainer.innerHTML = '';
+            if (tickersForRatioDisplay.length > 0) {
+                tickersForRatioDisplay.forEach(tickerName => {
+                    const cleanTickerName = tickerName.replace(/[^a-zA-Z0-9!$]/g, ''); 
+                    const itemContainer = document.createElement('label'); 
+                    itemContainer.className = 'ratio-item-label';
+                    
+                    const ratioCheckbox = document.createElement('input');
+                    ratioCheckbox.type = 'checkbox';
+                    ratioCheckbox.id = `ratio-checkbox-${cleanTickerName}`;
+                    ratioCheckbox.dataset.ticker = tickerName;
+
+                    const tickerNameSpan = document.createElement('span');
+                    tickerNameSpan.className = 'ratio-ticker-name';
+                    tickerNameSpan.textContent = tickerName;
+                    
+                    const ratioInput = document.createElement('input');
+                    ratioInput.type = 'number';
+                    ratioInput.id = `ratio-input-${cleanTickerName}`;
+                    ratioInput.dataset.ticker = tickerName; 
+                    ratioInput.value = '1'; 
+                    ratioInput.step = 'any'; 
+                    ratioInput.disabled = true; 
+
+                    ratioCheckbox.addEventListener('change', (event) => {
+                        ratioInput.disabled = !event.target.checked;
+                        if (!event.target.checked) {
+                            ratioInput.value = '1'; 
+                        }
+                    });
+                    
+                    itemContainer.appendChild(ratioCheckbox);
+                    itemContainer.appendChild(tickerNameSpan);
+                    itemContainer.appendChild(ratioInput);
+                    ratiosInputContainer.appendChild(itemContainer);
+                });
+                applyLoadedConfigStep2(); 
+                ratiosSection.classList.remove('hidden');
+            } else {
+                 ratiosInputContainer.innerHTML = '<p class="text-slate-400 text-sm">Nenhum ticker para definir ratios (após exclusões).</p>';
+                 ratiosSection.classList.remove('hidden'); 
+            }
+            
+            if (originalFieldOrder.length > 0 || uniqueTickers.length > 0) {
+                 generateOutputButtonContainer.classList.remove('hidden');
+            } else {
+                generateOutputButtonContainer.classList.add('hidden');
+            }
+            processedDataSection.classList.add('hidden');
+            configureTxtButtonContainer.classList.add('hidden');
+            txtConfigurationSection.classList.add('hidden');
+            processedDataTextarea.value = '';
+            downloadLinksArea.innerHTML = '';
+            if(loadedConfiguration) {
+                configStatusMessage.textContent = "Configuração carregada aplicada. Prossiga com as etapas.";
+            } else {
+                configStatusMessage.textContent = "Análise concluída. Defina suas configurações.";
+            }
+        });
+        
+        selectAllFieldsButton.addEventListener('click', () => {
+            fieldsCheckboxesContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+        });
+
+        deselectAllFieldsButton.addEventListener('click', () => {
+            fieldsCheckboxesContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        });
+
+        generateOutputButton.addEventListener('click', () => {
+            const selectedFields = Array.from(fieldsCheckboxesContainer.querySelectorAll('input[type="checkbox"]:checked'))
+                                      .map(cb => cb.value);
+            const tickerRatios = {};
+            ratiosInputContainer.querySelectorAll('.ratio-item-label').forEach(item => {
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                const input = item.querySelector('input[type="number"]');
+                const ticker = checkbox.dataset.ticker;
+                if (checkbox.checked) {
+                    const ratioValue = parseFloat(input.value);
+                    tickerRatios[ticker] = !isNaN(ratioValue) ? ratioValue : 1;
+                } else {
+                    tickerRatios[ticker] = 1; 
+                }
+            });
+            
+            const outputLines = [];
+            currentProcessedData = {}; 
+
+            cachedCleanedLines.forEach(line => {
+                const { ticker, fields } = parseDataLine(line); 
+                const assetRatio = tickerRatios[ticker] !== undefined ? tickerRatios[ticker] : 1; 
+                
+                if (!currentProcessedData[ticker]) {
+                    currentProcessedData[ticker] = {};
+                }
+
+                let outputForAssetPreview = ticker; 
+                let hasFieldsForThisAssetPreview = false;
+
+                originalFieldOrder.forEach(fieldName => {
+                    if (selectedFields.includes(fieldName) && fields.hasOwnProperty(fieldName)) {
+                        let originalFieldValue = fields[fieldName];
+                        let processedFieldValueForPreview = originalFieldValue; 
+                        
+                        const numericValue = parseFloat(originalFieldValue.replace(',', '.'));
+
+                        if (!isNaN(numericValue)) { 
+                            let valueForStorage = numericValue; 
+                            if (assetRatio !== 1) { 
+                                valueForStorage = numericValue * assetRatio;
+                            }
+                            processedFieldValueForPreview = valueForStorage.toFixed(2).replace('.', ',');
+                            currentProcessedData[ticker][fieldName] = valueForStorage; 
+                        } else {
+                             currentProcessedData[ticker][fieldName] = originalFieldValue; 
+                        }
+                        
+                        if (hasFieldsForThisAssetPreview) {
+                           outputForAssetPreview += ","; 
+                        }
+                        outputForAssetPreview += ` ${fieldName}, ${processedFieldValueForPreview}`; 
+                        hasFieldsForThisAssetPreview = true;
+                    }
+                });
+
+                if (hasFieldsForThisAssetPreview || (selectedFields.length === 0 && cachedCleanedLines.some(l => l.startsWith(ticker)))) {
+                     outputLines.push(outputForAssetPreview.trim());
+                }
+            });
+            
+            if (outputLines.length > 0) {
+                 processedDataTextarea.value = outputLines.join('\n\n');
+                 processedDataSection.classList.remove('hidden');
+                 configureTxtButtonContainer.classList.remove('hidden');
+                 txtConfigurationSection.classList.add('hidden'); 
+                 downloadLinksArea.innerHTML = ''; 
+            } else if (cachedCleanedLines.length > 0 && selectedFields.length === 0 ) {
+                 processedDataTextarea.value = cachedCleanedLines.join('\n\n'); 
+                 processedDataSection.classList.remove('hidden');
+                 configureTxtButtonContainer.classList.remove('hidden');
+                 txtConfigurationSection.classList.add('hidden');
+                 downloadLinksArea.innerHTML = '';
+            } else if (cachedCleanedLines.length > 0 && selectedFields.length > 0){
+                processedDataTextarea.value = "Nenhum dos campos selecionados foi encontrado nos dados fornecidos.";
+                processedDataSection.classList.remove('hidden');
+                configureTxtButtonContainer.classList.add('hidden');
+                txtConfigurationSection.classList.add('hidden');
+            } else {
+                 processedDataTextarea.value = "Nenhum dado para processar.";
+                 processedDataSection.classList.remove('hidden');
+                 configureTxtButtonContainer.classList.add('hidden');
+                 txtConfigurationSection.classList.add('hidden');
+            }
+        });
+
+        configureTxtButton.addEventListener('click', () => {
+            txtConfigContainer.innerHTML = ''; 
+            const selectedFieldsFromStep1 = Array.from(fieldsCheckboxesContainer.querySelectorAll('input[type="checkbox"]:checked'))
+                                               .map(cb => cb.value);
+
+            if (selectedFieldsFromStep1.length === 0) {
+                txtConfigContainer.innerHTML = '<p class="text-slate-400 text-sm">Nenhum campo foi selecionado na Etapa 1 para configurar para TXT.</p>';
+                txtConfigurationSection.classList.remove('hidden');
+                return;
+            }
+            
+            originalFieldOrder.forEach(fieldName => {
+                if (selectedFieldsFromStep1.includes(fieldName)) {
+                    const cleanFieldName = fieldName.replace(/\s+/g, '-');
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'txt-config-item items-center mb-2'; 
+
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'original-field-name';
+                    nameSpan.textContent = fieldName + ":";
+                    itemDiv.appendChild(nameSpan);
+
+                    const txtNameInput = document.createElement('input');
+                    txtNameInput.type = 'text';
+                    txtNameInput.placeholder = 'Nome no TXT (ex: Call Wall)';
+                    txtNameInput.dataset.originalField = fieldName;
+                    txtNameInput.id = `txt-name-${cleanFieldName}`;
+                    txtNameInput.value = fieldName; 
+                    itemDiv.appendChild(txtNameInput);
+
+                    const txtNumInput = document.createElement('input');
+                    txtNumInput.type = 'text'; 
+                    txtNumInput.placeholder = '# (Opc.)';
+                    txtNumInput.className = 'txt-num-input'; 
+                    txtNumInput.dataset.originalField = fieldName;
+                    txtNumInput.id = `txt-num-${cleanFieldName}`;
+                    txtNumInput.value = '2F4F4F'; 
+                    itemDiv.appendChild(txtNumInput);
+                    
+                    txtConfigContainer.appendChild(itemDiv);
+                }
+            });
+            applyLoadedConfigStep3(); 
+            txtConfigurationSection.classList.remove('hidden');
+            downloadLinksArea.innerHTML = ''; 
+        });
+        
+        function generateTxtContentForAsset(tickerWithColon, assetData, txtConfigs, formattedDate, originalFieldOrder) {
+            const baseFilename = tickerWithColon.replace(':', ''); 
+            const fieldSuffixForTxt = baseFilename.replace('$', '');    
+            
+            let txtContentForAsset = `${formattedDate}\n\n`;
+            const valueToFieldConfigsMap = new Map();
+            
+            originalFieldOrder.forEach(originalFieldName => {
+                if (assetData.hasOwnProperty(originalFieldName) && txtConfigs.hasOwnProperty(originalFieldName)) {
+                    let value = assetData[originalFieldName]; 
+                    if (typeof value === 'number') {
+                        value = value.toString().replace('.', ',');
+                    }
+                    if (!valueToFieldConfigsMap.has(value)) {
+                        valueToFieldConfigsMap.set(value, []);
+                    }
+                    valueToFieldConfigsMap.get(value).push(txtConfigs[originalFieldName]);
+                }
+            });
+
+            let hasContentForThisFile = false;
+            valueToFieldConfigsMap.forEach((configs, valueString) => {
+                const combinedName = configs.map(c => c.name).join(' / ');
+                let numPart = '# '; 
+                if (configs.length > 0 && configs[0].num) { 
+                    numPart = `#${configs[0].num} `; 
+                }
+
+                let finalFieldNameInTxt = combinedName;
+                if (tickerWithColon !== '$ES1!:' && tickerWithColon !== '$NQ1!:') {
+                    finalFieldNameInTxt += `_${fieldSuffixForTxt}`;
+                }
+                
+                txtContentForAsset += `${valueString} ${numPart}"${finalFieldNameInTxt}"\n`;
+                hasContentForThisFile = true;
+            });
+            return hasContentForThisFile ? txtContentForAsset : null;
+        }
+
+        downloadTxtFilesButton.addEventListener('click', () => {
+            downloadLinksArea.innerHTML = ''; 
+            const today = new Date();
+            const day = String(today.getDate()).padStart(2, '0');
+            const month = String(today.getMonth() + 1).padStart(2, '0'); 
+            const year = today.getFullYear();
+            const formattedDate = `${day}/${month}/${year}`;
+
+            const txtConfigs = {};
+            txtConfigContainer.querySelectorAll('.txt-config-item').forEach(item => {
+                const originalField = item.querySelector('input[type="text"]').dataset.originalField;
+                const txtName = item.querySelector('input[type="text"]').value.trim();
+                const txtNum = item.querySelector('.txt-num-input').value.trim(); 
+                if (originalField) {
+                    txtConfigs[originalField] = { name: txtName || originalField, num: txtNum };
+                }
+            });
+
+            if (Object.keys(currentProcessedData).length === 0) {
+                downloadLinksArea.innerHTML = '<p class="text-red-400">Nenhum dado processado para gerar arquivos TXT.</p>';
+                return;
+            }
+            
+            let filesGenerated = 0;
+            for (const tickerWithColon in currentProcessedData) {
+                const assetData = currentProcessedData[tickerWithColon];
+                const txtContent = generateTxtContentForAsset(tickerWithColon, assetData, txtConfigs, formattedDate, originalFieldOrder);
+
+                if (txtContent) {
+                    filesGenerated++;
+                    const baseFilename = tickerWithColon.replace(':', ''); 
+                    const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `${baseFilename}.txt`; 
+                    link.textContent = `Baixar ${link.download}`;
+                    link.className = "inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1 px-3 rounded-md text-xs mr-2 mb-2";
+                    
+                    const p = document.createElement('p');
+                    p.appendChild(link);
+                    downloadLinksArea.appendChild(p);
+                }
+            }
+            if(filesGenerated === 0){
+                downloadLinksArea.innerHTML = '<p class="text-yellow-400">Nenhum arquivo TXT gerado. Verifique as configurações e os dados processados.</p>';
+            }
+        });
+
+        loadConfigButton.addEventListener('click', () => {
+            fileUploadConfig.click(); 
+        });
+
+        fileUploadConfig.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const config = JSON.parse(e.target.result);
+                        if (config && config.version === 1) { 
+                            loadedConfiguration = config;
+                            configStatusMessage.textContent = `Configuração "${file.name}" carregada. Clique em "Analisar Dados" para aplicá-la.`;
+                            configStatusMessage.className = "text-xs text-green-400 mt-2 text-center";
+                            fileUploadConfig.value = '';
+                        } else {
+                            configStatusMessage.textContent = "Erro: Arquivo de configuração inválido ou versão incompatível.";
+                            configStatusMessage.className = "text-xs text-red-400 mt-2 text-center";
+                        }
+                    } catch (error) {
+                        configStatusMessage.textContent = `Erro ao ler o arquivo de configuração: ${error.message}`;
+                        configStatusMessage.className = "text-xs text-red-400 mt-2 text-center";
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        saveConfigButton.addEventListener('click', () => {
+            const selectedFieldsStep1 = Array.from(fieldsCheckboxesContainer.querySelectorAll('input[type="checkbox"]:checked'))
+                                          .map(cb => cb.value);
+
+            const ratioSettingsStep2 = {};
+            ratiosInputContainer.querySelectorAll('.ratio-item-label').forEach(item => {
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                const input = item.querySelector('input[type="number"]');
+                const ticker = checkbox.dataset.ticker;
+                ratioSettingsStep2[ticker] = {
+                    applyRatio: checkbox.checked,
+                    ratioValue: input.value
+                };
+            });
+
+            const txtConfigsStep3 = {};
+            if (txtConfigContainer.querySelector('.txt-config-item')) {
+                txtConfigContainer.querySelectorAll('.txt-config-item').forEach(itemDiv => {
+                    const originalFieldInput = itemDiv.querySelector('input[type="text"]');
+                    if (originalFieldInput && originalFieldInput.dataset.originalField) {
+                        const originalField = originalFieldInput.dataset.originalField;
+                        const txtName = originalFieldInput.value.trim();
+                        const txtNum = itemDiv.querySelector('.txt-num-input').value.trim(); 
+                        txtConfigsStep3[originalField] = {
+                            txtName: txtName || originalField,
+                            txtNum: txtNum
+                        };
+                    }
+                });
+            }
+
+            const currentFullConfiguration = {
+                version: 1,
+                selectedFieldsStep1: selectedFieldsStep1,
+                ratioSettingsStep2: ratioSettingsStep2,
+                txtConfigsStep3: txtConfigsStep3
+            };
+
+            const configString = JSON.stringify(currentFullConfiguration, null, 2); 
+            const blob = new Blob([configString], { type: 'application/json;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'menthorq_configs.json';
+            document.body.appendChild(link); 
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            configStatusMessage.textContent = "Configurações atuais salvas em menthorq_configs.json";
+            configStatusMessage.className = "text-xs text-green-400 mt-2 text-center";
+        });
+
+    </script>
+
+</body>
+</html>
