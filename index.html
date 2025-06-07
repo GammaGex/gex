@@ -257,15 +257,15 @@
                     if (loadedConfiguration.txtConfigsStep3[originalField]) {
                         const config = loadedConfiguration.txtConfigsStep3[originalField];
                         txtNameInput.value = config.txtName || originalField;
-                        txtNumInput.value = config.txtNum || '2F4F4F'; // Aplica o default aqui também se carregado e vazio
+                        txtNumInput.value = config.txtNum || ''; 
                     } else { 
                         txtNameInput.value = originalField;
-                        txtNumInput.value = '2F4F4F'; // Default para novos campos não na config
+                        txtNumInput.value = ''; 
                     }
                 });
-            } else { // Se não há config salva para Etapa 3, aplica o default
+            } else { 
                  txtConfigContainer.querySelectorAll('.txt-config-item .txt-num-input').forEach(input => {
-                    input.value = '2F4F4F';
+                    input.value = '';
                 });
             }
         }
@@ -532,7 +532,7 @@
                     txtNumInput.className = 'txt-num-input'; 
                     txtNumInput.dataset.originalField = fieldName;
                     txtNumInput.id = `txt-num-${cleanFieldName}`;
-                    txtNumInput.value = '2F4F4F'; 
+                    txtNumInput.value = ''; // MODIFICAÇÃO: Valor padrão removido
                     itemDiv.appendChild(txtNumInput);
                     
                     txtConfigContainer.appendChild(itemDiv);
@@ -703,12 +703,12 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = 'menthorq_configs.json';
+            link.download = 'mm_gex_configs.json'; // Nome do arquivo de config atualizado
             document.body.appendChild(link); 
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
-            configStatusMessage.textContent = "Configurações atuais salvas em menthorq_configs.json";
+            configStatusMessage.textContent = `Configurações atuais salvas em ${link.download}`;
             configStatusMessage.className = "text-xs text-green-400 mt-2 text-center";
         });
 
