@@ -102,13 +102,6 @@
             background-color: #475569;
             cursor: not-allowed;
         }
-        .radio-group label {
-            margin-right: 1rem;
-            font-size: 0.875rem;
-        }
-        .radio-group input {
-            margin-right: 0.3rem;
-        }
 
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -131,6 +124,23 @@
             </div>
             <p id="loginError" class="text-red-400 text-sm text-center h-5 mt-4"></p>
             <button id="loginButton" class="w-full mt-4 bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-lg shadow-md transform hover:scale-105 transition-all">Entrar</button>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação para Deletar Arquivos Antigos -->
+    <div id="confirmDeleteModal" class="hidden fixed inset-0 bg-slate-900 bg-opacity-80 flex items-center justify-center z-50 p-4">
+        <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-lg text-center">
+            <h2 class="text-3xl font-bold text-red-500 mb-4">ATENÇÃO!</h2>
+            <p class="text-lg text-slate-200 mb-2">
+                É essencial <strong class="font-bold text-yellow-300">DELETAR OS ARQUIVOS ANTIGOS</strong> da pasta antes de fazer o download dos novos.
+            </p>
+            <p class="text-sm text-slate-400 mb-8">
+                Isso garante que seu programa de plotagem leia apenas os dados mais recentes, evitando erros.
+            </p>
+            <div class="flex justify-center gap-4">
+                <button id="cancelDownloadButton" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-all">Cancelar</button>
+                <button id="confirmDownloadButton" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-8 rounded-lg shadow-md transition-all">Sim, já deletei. Prosseguir.</button>
+            </div>
         </div>
     </div>
     
@@ -273,6 +283,9 @@
         const configStatusMessage = document.getElementById('configStatusMessage');
         const calculateAllRatiosButton = document.getElementById('calculateAllRatiosButton');
         const ratioCalcStatus = document.getElementById('ratioCalcStatus');
+        const confirmDeleteModal = document.getElementById('confirmDeleteModal');
+        const cancelDownloadButton = document.getElementById('cancelDownloadButton');
+        const confirmDownloadButton = document.getElementById('confirmDownloadButton');
 
         let cachedCleanedLines = []; 
         let originalFieldOrder = []; 
@@ -310,26 +323,6 @@
                 const allFieldCheckboxes = fieldsCheckboxesContainer.querySelectorAll('input[type="checkbox"]');
                 allFieldCheckboxes.forEach(cb => {
                     cb.checked = loadedConfiguration.selectedFieldsStep1.includes(cb.value);
-                });
-            }
-        }
-
-        function applyLoadedConfigStep2() {
-            if (loadedConfiguration && loadedConfiguration.ratioSettingsStep2) {
-                ratiosInputContainer.querySelectorAll('.ratio-item-label').forEach(item => {
-                    const checkbox = item.querySelector('input[type="checkbox"]');
-                    const input = item.querySelector('input[type="number"]');
-                    const ticker = checkbox.dataset.ticker;
-                    if (loadedConfiguration.ratioSettingsStep2[ticker]) {
-                        const config = loadedConfiguration.ratioSettingsStep2[ticker];
-                        checkbox.checked = config.applyRatio;
-                        input.value = config.ratioValue || '1';
-                        input.disabled = !config.applyRatio;
-                    } else { 
-                        checkbox.checked = false;
-                        input.value = '1';
-                        input.disabled = true;
-                    }
                 });
             }
         }
@@ -471,7 +464,7 @@
                     itemContainer.appendChild(ratioInput);
                     ratiosInputContainer.appendChild(itemContainer);
                 });
-                applyLoadedConfigStep2(); 
+                // Ratios não são mais carregados automaticamente. Usuário deve clicar no botão.
                 ratiosSection.classList.remove('hidden');
             } else {
                  ratiosInputContainer.innerHTML = '<p class="text-slate-400 text-sm">Nenhum ticker para definir ratios (após exclusões).</p>';
@@ -489,7 +482,7 @@
             processedDataTextarea.value = '';
             downloadLinksArea.innerHTML = '';
             if(loadedConfiguration) {
-                configStatusMessage.textContent = "Configuração carregada aplicada. Prossiga com as etapas.";
+                configStatusMessage.textContent = "Configuração carregada aplicada. Para os ratios, clique no botão de cálculo.";
             } else {
                 configStatusMessage.textContent = "Análise concluída. Defina suas configurações.";
             }
@@ -669,12 +662,17 @@
             return hasContentForThisFile ? txtContentForAsset : null;
         }
 
-        downloadTxtFilesButton.addEventListener('click', () => {
+        function triggerDownloads() {
             downloadLinksArea.innerHTML = ''; 
-            const today = new Date();
-            const day = String(today.getDate()).padStart(2, '0');
-            const month = String(today.getMonth() + 1).padStart(2, '0'); 
-            const year = today.getFullYear();
+            const now = new Date();
+            let targetDate = new Date(now);
+            if (now.getHours() >= 19) {
+                targetDate.setDate(targetDate.getDate() + 1);
+            }
+
+            const day = String(targetDate.getDate()).padStart(2, '0');
+            const month = String(targetDate.getMonth() + 1).padStart(2, '0'); 
+            const year = targetDate.getFullYear();
             const formattedDate = `${day}/${month}/${year}`;
 
             const txtConfigs = {};
@@ -711,12 +709,26 @@
                     const p = document.createElement('p');
                     p.appendChild(link);
                     downloadLinksArea.appendChild(p);
+                    // Inicia o download automaticamente
+                    link.click();
                 }
             }
             if(filesGenerated === 0){
                 downloadLinksArea.innerHTML = '<p class="text-yellow-400">Nenhum arquivo TXT gerado. Verifique as configurações e os dados processados.</p>';
             }
+        }
+        
+        downloadTxtFilesButton.addEventListener('click', () => {
+            confirmDeleteModal.classList.remove('hidden');
         });
+        cancelDownloadButton.addEventListener('click', () => {
+            confirmDeleteModal.classList.add('hidden');
+        });
+        confirmDownloadButton.addEventListener('click', () => {
+            confirmDeleteModal.classList.add('hidden');
+            triggerDownloads();
+        });
+
 
         loadConfigButton.addEventListener('click', () => {
             fileUploadConfig.click(); 
