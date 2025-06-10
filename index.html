@@ -93,6 +93,22 @@
         #fileUploadConfig {
             display: none; 
         }
+        .auto-ratio-section {
+            border-top: 1px solid #475569;
+            margin-top: 1rem;
+            padding-top: 1rem;
+        }
+        .calc-button:disabled {
+            background-color: #475569;
+            cursor: not-allowed;
+        }
+        .radio-group label {
+            margin-right: 1rem;
+            font-size: 0.875rem;
+        }
+        .radio-group input {
+            margin-right: 0.3rem;
+        }
 
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -157,6 +173,14 @@
             <div id="ratiosSection" class="mb-4 hidden">
                 <label class="block text-sm font-medium text-slate-300 mb-2">2. Para aplicar ratio, marque o ativo e defina o valor:</label>
                 <div id="ratiosInputContainer"></div>
+                <!-- Seção para Cálculo Automático Simplificada -->
+                <div class="auto-ratio-section">
+                    <h3 class="text-base font-medium text-slate-200 mb-3 text-center">Cálculo de Ratio Automático (Yahoo Finance)</h3>
+                    <div class="text-center">
+                        <button id="calculateAllRatiosButton" class="calc-button bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transform hover:scale-105 transition-all" disabled>Calcular Todos os Ratios</button>
+                    </div>
+                     <p id="ratioCalcStatus" class="text-center text-xs text-yellow-300 h-4 mt-2"></p>
+                </div>
             </div>
 
             <div id="generateOutputButtonContainer" class="mb-4 text-center hidden">
@@ -196,7 +220,7 @@
 
         // --- Altere o usuário e a senha aqui ---
         const correctUser = "GEX";
-        const correctPass = "Qwerty@123";
+        const correctPass = "GEX";
         // ------------------------------------
 
         function attemptLogin() {
@@ -210,7 +234,6 @@
             } else {
                 // Falha
                 loginError.textContent = "Usuário ou senha inválidos.";
-                // Limpa a mensagem de erro após 3 segundos
                 setTimeout(() => {
                     loginError.textContent = "";
                 }, 3000);
@@ -224,9 +247,8 @@
             }
         });
         // ---- FIM DA SEÇÃO DE LOGIN ----
-
         
-        // ---- CÓDIGO DO APLICATIVO PRINCIPAL (sem alterações) ----
+        // ---- CÓDIGO DO APLICATIVO PRINCIPAL ----
         const rawDataTextarea = document.getElementById('rawData');
         const analyzeFieldsButton = document.getElementById('analyzeFieldsButton');
         const fieldsSelectionSection = document.getElementById('fieldsSelectionSection');
@@ -249,6 +271,8 @@
         const saveConfigButton = document.getElementById('saveConfigButton');
         const fileUploadConfig = document.getElementById('fileUploadConfig');
         const configStatusMessage = document.getElementById('configStatusMessage');
+        const calculateAllRatiosButton = document.getElementById('calculateAllRatiosButton');
+        const ratioCalcStatus = document.getElementById('ratioCalcStatus');
 
         let cachedCleanedLines = []; 
         let originalFieldOrder = []; 
@@ -256,6 +280,8 @@
         let tickersForRatioDisplay = [];
         let currentProcessedData = {}; 
         let loadedConfiguration = null; 
+
+        // Restante do código...
 
         function parseDataLine(line) {
             const tickerEndIndex = line.indexOf(':');
@@ -338,19 +364,25 @@
             const allFields = new Set();
             const fieldOrderMap = new Map();
             const tickersSet = new Set();
-
+            
             lines.forEach(line => {
                 const trimmedLine = line.trim();
                 if (trimmedLine.startsWith('$')) {
                     cachedCleanedLines.push(trimmedLine);
                     const { ticker, fields, lineFieldOrder } = parseDataLine(trimmedLine);
                     tickersSet.add(ticker); 
+
                     lineFieldOrder.forEach(fieldName => {
                         allFields.add(fieldName);
                         if (!fieldOrderMap.has(fieldName)) fieldOrderMap.set(fieldName, fieldOrderMap.size);
                     });
                 }
             });
+
+            const hasEsTickers = tickersSet.has('$SPX:') || tickersSet.has('$SPY:');
+            const hasNqTickers = tickersSet.has('$NDX:') || tickersSet.has('$QQQ:');
+            const hasGldTicker = tickersSet.has('$GLD:');
+            calculateAllRatiosButton.disabled = !(hasEsTickers || hasNqTickers || hasGldTicker);
             
             originalFieldOrder = Array.from(allFields).sort((a, b) => (fieldOrderMap.get(a) || 0) - (fieldOrderMap.get(b) || 0));
             uniqueTickers = Array.from(tickersSet);
@@ -365,7 +397,7 @@
                 return a.localeCompare(b);
             });
 
-            const excludedTickersForRatio = ['$ES1!:', '$NQ1!:'];
+            const excludedTickersForRatio = ['$ES1!:', '$NQ1!:', '$GC1!:'];
             tickersForRatioDisplay = uniqueTickers.filter(ticker => !excludedTickersForRatio.includes(ticker));
 
             fieldsCheckboxesContainer.innerHTML = ''; 
@@ -463,13 +495,7 @@
             }
         });
         
-        selectAllFieldsButton.addEventListener('click', () => {
-            fieldsCheckboxesContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
-        });
-
-        deselectAllFieldsButton.addEventListener('click', () => {
-            fieldsCheckboxesContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-        });
+        // ... (resto do código igual)
 
         generateOutputButton.addEventListener('click', () => {
             const selectedFields = Array.from(fieldsCheckboxesContainer.querySelectorAll('input[type="checkbox"]:checked'))
@@ -633,7 +659,7 @@
                 }
 
                 let finalFieldNameInTxt = combinedName;
-                if (tickerWithColon !== '$ES1!:' && tickerWithColon !== '$NQ1!:') {
+                if (!tickerWithColon.endsWith('1!:')) {
                     finalFieldNameInTxt += `_${fieldSuffixForTxt}`;
                 }
                 
@@ -771,6 +797,153 @@
             URL.revokeObjectURL(url);
             configStatusMessage.textContent = `Configurações atuais salvas em ${link.download}`;
             configStatusMessage.className = "text-xs text-green-400 mt-2 text-center";
+        });
+
+        // ---- Funções para Cálculo Automático de Ratio ----
+        const tickerMapping = {
+            '$SPX:': '^GSPC',
+            '$NDX:': '^NDX',
+            '$SPY:': 'SPY',
+            '$QQQ:': 'QQQ',
+            '$GLD:': 'GLD',
+            '$IWM:': 'IWM',
+            // Tickers de referência
+            'ref_es': 'ES=F',
+            'ref_nq': 'NQ=F',
+            'ref_gc': 'GC=F'
+        };
+
+        async function fetchPrice(apiSymbol, retries = 5, delay = 1500) { 
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const proxyUrl = 'https://api.allorigins.win/get?url=';
+                    const apiUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${apiSymbol}`;
+                    
+                    const response = await fetch(proxyUrl + encodeURIComponent(apiUrl));
+                    if (!response.ok) throw new Error(`Network response was not ok for ${apiSymbol}`);
+                    const data = await response.json();
+                    const result = JSON.parse(data.contents);
+                    
+                    if (result.chart.error) {
+                        throw new Error(result.chart.error.description || `Erro para ${apiSymbol}`);
+                    }
+                    
+                    const meta = result.chart.result[0].meta;
+                    return { 
+                        price: meta.regularMarketPrice, 
+                        previousClose: meta.previousClose,
+                        marketState: meta.marketState 
+                    };
+
+                } catch (error) {
+                    console.error(`Falha ao buscar preço para ${apiSymbol} (tentativa ${i + 1}):`, error);
+                    if (i < retries - 1) {
+                        ratioCalcStatus.textContent = `Falha (${apiSymbol}). Tentando novamente...`;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    } else {
+                        ratioCalcStatus.textContent = `Falha definitiva ao buscar ${apiSymbol}.`;
+                        return null; 
+                    }
+                }
+            }
+            return null;
+        }
+
+
+        async function performRatioCalculation(refSymbolKey, tickersToUpdate, priceType) {
+            ratioCalcStatus.textContent = `Buscando preço de referência (${tickerMapping[refSymbolKey]})...`;
+            
+            const refData = await fetchPrice(tickerMapping[refSymbolKey]);
+             if (!refData) {
+                ratioCalcStatus.textContent = `Falha ao buscar preço de referência para ${refSymbolKey}.`;
+                return false;
+            }
+            const refPrice = (priceType === 'previousClose') ? refData.previousClose : refData.price;
+
+            ratioCalcStatus.textContent = `Calculando vs ${refSymbolKey.replace('ref_', '').toUpperCase()}...`;
+            
+            for (const ticker of tickersToUpdate) {
+                 const item = ratiosInputContainer.querySelector(`[data-ticker="${ticker}"]`)?.closest('.ratio-item-label');
+                 if (!item) continue;
+
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                const input = item.querySelector('input[type="number"]');
+                const apiSymbol = tickerMapping[ticker];
+
+                if (apiSymbol) {
+                    const data = await fetchPrice(apiSymbol);
+                    if (data) {
+                        const price = (priceType === 'previousClose') ? data.previousClose : data.price;
+                        if(price && price > 0) {
+                            const calculatedRatio = refPrice / price;
+                            input.value = calculatedRatio.toFixed(8);
+                            checkbox.checked = true;
+                            input.disabled = false;
+                        } else {
+                            ratioCalcStatus.textContent = `Preço inválido para ${ticker}.`;
+                            return false;
+                        }
+                    } else {
+                        ratioCalcStatus.textContent = `Falha ao buscar preço para ${ticker}.`;
+                        return false;
+                    }
+                }
+            }
+             return true; 
+        }
+
+        calculateAllRatiosButton.addEventListener('click', async () => {
+            const tickersSet = new Set(uniqueTickers);
+            const hasEsTickers = tickersSet.has('$SPX:') || tickersSet.has('$SPY:');
+            const hasNqTickers = tickersSet.has('$NDX:') || tickersSet.has('$QQQ:');
+            const hasGldTicker = tickersSet.has('$GLD:');
+            
+            calculateAllRatiosButton.disabled = true;
+
+            ratioCalcStatus.textContent = "Verificando status do mercado...";
+            const marketStatusCheck = await fetchPrice('^GSPC'); 
+            let priceType = 'previousClose';
+
+            if (marketStatusCheck) {
+                if (marketStatusCheck.marketState === 'REGULAR') {
+                    priceType = 'current';
+                    ratioCalcStatus.textContent = "Mercado aberto. Usando preços atuais.";
+                } else {
+                    ratioCalcStatus.textContent = "Mercado fechado. Usando preços de fechamento.";
+                }
+                 await new Promise(resolve => setTimeout(resolve, 2000));
+            } else {
+                ratioCalcStatus.textContent = "Não foi possível verificar status. Usando fechamento.";
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+
+            if (hasEsTickers) {
+                const success = await performRatioCalculation('ref_es', ['$SPX:', '$SPY:'], priceType);
+                if (!success) {
+                    calculateAllRatiosButton.disabled = false;
+                    return;
+                }
+            }
+            if (hasNqTickers) {
+                const success = await performRatioCalculation('ref_nq', ['$NDX:', '$QQQ:'], priceType);
+                if (!success) {
+                    calculateAllRatiosButton.disabled = false;
+                    return;
+                }
+            }
+            if (hasGldTicker) {
+                const success = await performRatioCalculation('ref_gc', ['$GLD:'], priceType);
+                 if (!success) {
+                    calculateAllRatiosButton.disabled = false;
+                    return;
+                }
+            }
+            
+            ratioCalcStatus.textContent = 'Todos os cálculos concluídos!';
+            setTimeout(() => {
+                ratioCalcStatus.textContent = '';
+                calculateAllRatiosButton.disabled = false;
+            }, 3000);
         });
 
     </script>
