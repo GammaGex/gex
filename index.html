@@ -108,7 +108,6 @@
 </head>
 <body class="bg-slate-900 text-slate-100 flex flex-col items-center justify-center min-h-screen p-4 selection:bg-sky-500 selection:text-white">
 
-    <!-- Tela de Login -->
     <div id="loginOverlay" class="fixed inset-0 bg-slate-900 bg-opacity-95 flex items-center justify-center z-50">
         <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-sm">
             <h2 class="text-2xl font-bold text-sky-400 text-center mb-6">Login</h2>
@@ -127,7 +126,6 @@
         </div>
     </div>
 
-    <!-- Modal de Confirmação para Deletar Arquivos Antigos -->
     <div id="confirmDeleteModal" class="hidden fixed inset-0 bg-slate-900 bg-opacity-80 flex items-center justify-center z-50 p-4">
         <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-lg text-center">
             <h2 class="text-3xl font-bold text-red-500 mb-4">ATENÇÃO!</h2>
@@ -144,7 +142,6 @@
         </div>
     </div>
     
-    <!-- Container Principal do Aplicativo (inicialmente oculto) -->
     <div id="appContainer" class="hidden bg-slate-800-contrast p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-3xl">
         <header class="mb-6 sm:mb-8 text-center">
             <h1 class="text-2xl sm:text-3xl font-bold text-sky-400">Processador de Dados MM_Gex</h1>
@@ -183,7 +180,6 @@
             <div id="ratiosSection" class="mb-4 hidden">
                 <label class="block text-sm font-medium text-slate-300 mb-2">2. Para aplicar ratio, marque o ativo e defina o valor:</label>
                 <div id="ratiosInputContainer"></div>
-                <!-- Seção para Cálculo Automático Simplificada -->
                 <div class="auto-ratio-section">
                     <h3 class="text-base font-medium text-slate-200 mb-3 text-center">Cálculo de Ratio Automático (Yahoo Finance)</h3>
                     <div class="text-center">
@@ -828,7 +824,6 @@
         async function fetchPrice(apiSymbol, retries = 5, delay = 1500) { 
             for (let i = 0; i < retries; i++) {
                 try {
-                    // Adiciona um parâmetro único para evitar cache
                     const cacheBuster = `_=${new Date().getTime()}`;
                     const proxyUrl = 'https://api.allorigins.win/get?url=';
                     const apiUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${apiSymbol}?${cacheBuster}`;
@@ -865,7 +860,7 @@
 
 
         async function performRatioCalculation(refSymbolKey, tickersToUpdate) {
-            ratioCalcStatus.textContent = `Buscando preços...`;
+            ratioCalcStatus.textContent = `Buscando preços de referência...`;
             
             const refData = await fetchPrice(tickerMapping[refSymbolKey]);
              if (!refData) {
@@ -882,18 +877,20 @@
                 const apiSymbol = tickerMapping[ticker];
 
                 if (apiSymbol) {
+                    ratioCalcStatus.textContent = `Buscando preço para ${apiSymbol}...`;
                     const data = await fetchPrice(apiSymbol);
                     if (data) {
+                        // Lógica de decisão do tipo de preço por par de ativos
                         const refMarketOpen = refData.marketState === 'REGULAR';
                         const targetMarketOpen = data.marketState === 'REGULAR';
                         
                         let priceType;
                         if (refMarketOpen && targetMarketOpen) {
                             priceType = 'current';
-                            ratioCalcStatus.textContent = `Calculando ${ticker} (preços atuais)...`;
+                            ratioCalcStatus.textContent = `Calculando ${apiSymbol} (preços atuais)...`;
                         } else {
                             priceType = 'previousClose';
-                            ratioCalcStatus.textContent = `Calculando ${ticker} (preços de fechamento)...`;
+                            ratioCalcStatus.textContent = `Calculando ${apiSymbol} (preços de fechamento)...`;
                         }
                         
                         const refPrice = (priceType === 'previousClose') ? refData.previousClose : refData.price;
@@ -924,7 +921,7 @@
             const hasGldTicker = tickersSet.has('$GLD:');
             
             calculateAllRatiosButton.disabled = true;
-
+            
             if (hasEsTickers) {
                 const success = await performRatioCalculation('ref_es', ['$SPX:', '$SPY:']);
                 if (!success) {
