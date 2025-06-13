@@ -102,6 +102,16 @@
             background-color: #475569;
             cursor: not-allowed;
         }
+        .lang-button {
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+        .lang-button.active {
+            opacity: 1;
+            transform: scale(1.1);
+            box-shadow: 0 0 10px rgba(14, 165, 233, 0.7);
+            border-radius: 50%;
+        }
 
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -110,36 +120,45 @@
 
     <!-- Tela de Login -->
     <div id="loginOverlay" class="fixed inset-0 bg-slate-900 bg-opacity-95 flex items-center justify-center z-50">
-        <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-sm">
-            <h2 class="text-2xl font-bold text-sky-400 text-center mb-6">Login</h2>
+        <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-sm relative">
+            <!-- Seletor de Idioma -->
+            <div class="absolute top-4 right-4 flex gap-3">
+                <button data-lang="pt" class="lang-button">
+                    <img src="https://flagcdn.com/w20/br.png" alt="Português">
+                </button>
+                <button data-lang="en" class="lang-button">
+                    <img src="https://flagcdn.com/w20/us.png" alt="English">
+                </button>
+            </div>
+            <h2 class="text-2xl font-bold text-sky-400 text-center mb-6" data-i18n-key="loginTitle">Login</h2>
             <div class="space-y-4">
                 <div>
-                    <label for="username" class="block text-sm font-medium text-slate-300 mb-1">Usuário</label>
+                    <label for="username" class="block text-sm font-medium text-slate-300 mb-1" data-i18n-key="usernameLabel">Usuário</label>
                     <input type="text" id="username" class="w-full p-3 bg-slate-700 text-slate-200 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
                 </div>
                 <div>
-                    <label for="password" class="block text-sm font-medium text-slate-300 mb-1">Senha</label>
+                    <label for="password" class="block text-sm font-medium text-slate-300 mb-1" data-i18n-key="passwordLabel">Senha</label>
                     <input type="password" id="password" class="w-full p-3 bg-slate-700 text-slate-200 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
                 </div>
             </div>
             <p id="loginError" class="text-red-400 text-sm text-center h-5 mt-4"></p>
-            <button id="loginButton" class="w-full mt-4 bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-lg shadow-md transform hover:scale-105 transition-all">Entrar</button>
+            <button id="loginButton" class="w-full mt-4 bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-lg shadow-md transform hover:scale-105 transition-all" data-i18n-key="loginButton">Entrar</button>
         </div>
     </div>
 
     <!-- Modal de Confirmação para Deletar Arquivos Antigos -->
     <div id="confirmDeleteModal" class="hidden fixed inset-0 bg-slate-900 bg-opacity-80 flex items-center justify-center z-50 p-4">
         <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-lg text-center">
-            <h2 class="text-3xl font-bold text-red-500 mb-4">ATENÇÃO!</h2>
-            <p class="text-lg text-slate-200 mb-2">
-                É essencial <strong class="font-bold text-yellow-300">DELETAR OS ARQUIVOS ANTIGOS</strong> da pasta antes de fazer o download dos novos.
+            <h2 class="text-3xl font-bold text-red-500 mb-4" data-i18n-key="attention">ATENÇÃO!</h2>
+            <p class="text-lg text-slate-200 mb-2" data-i18n-key="deleteWarning">
+                É essencial <strong class="font-bold text-yellow-300" data-i18n-key="delete">DELETAR OS ARQUIVOS ANTIGOS</strong> da pasta antes de fazer o download dos novos.
             </p>
-            <p class="text-sm text-slate-400 mb-8">
+            <p class="text-sm text-slate-400 mb-8" data-i18n-key="deleteReason">
                 Isso garante que seu programa de plotagem leia apenas os dados mais recentes, evitando erros.
             </p>
             <div class="flex justify-center gap-4">
-                <button id="cancelDownloadButton" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-all">Cancelar</button>
-                <button id="confirmDownloadButton" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-8 rounded-lg shadow-md transition-all">Sim, já deletei. Prosseguir.</button>
+                <button id="cancelDownloadButton" class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-all" data-i18n-key="cancel">Cancelar</button>
+                <button id="confirmDownloadButton" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-8 rounded-lg shadow-md transition-all" data-i18n-key="confirmDelete">Sim, já deletei. Prosseguir.</button>
             </div>
         </div>
     </div>
@@ -147,80 +166,218 @@
     <!-- Container Principal do Aplicativo (inicialmente oculto) -->
     <div id="appContainer" class="hidden bg-slate-800-contrast p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-3xl">
         <header class="mb-6 sm:mb-8 text-center">
-            <h1 class="text-2xl sm:text-3xl font-bold text-sky-400">Processador de Dados MM_Gex</h1>
-            <p class="text-sm text-slate-400 mt-1">Cole os dados, analise, defina ratios, configure e gere arquivos TXT.</p>
+            <h1 class="text-2xl sm:text-3xl font-bold text-sky-400" data-i18n-key="appTitle">Processador de Dados Gex</h1>
+            <p class="text-sm text-slate-400 mt-1" data-i18n-key="appSubtitle">Cole os dados, analise, defina ratios, configure e gere arquivos TXT.</p>
         </header>
 
         <main>
             <div class="mb-6 p-4 bg-slate-700 rounded-lg">
-                <h2 class="text-lg font-semibold text-sky-300 mb-3 text-center">Gerenciamento de Configurações</h2>
+                <h2 class="text-lg font-semibold text-sky-300 mb-3 text-center" data-i18n-key="configTitle">Gerenciamento de Configurações</h2>
                 <div class="flex flex-col sm:flex-row justify-center items-center gap-3">
-                    <button id="loadConfigButton" class="config-button text-white font-semibold py-2 px-4 rounded-lg shadow-md transform hover:scale-105 transition-all w-full sm:w-auto">Carregar Configurações</button>
+                    <button id="loadConfigButton" class="config-button text-white font-semibold py-2 px-4 rounded-lg shadow-md transform hover:scale-105 transition-all w-full sm:w-auto" data-i18n-key="loadConfig">Carregar Configurações</button>
                     <input type="file" id="fileUploadConfig" accept=".json">
-                    <button id="saveConfigButton" class="config-button text-white font-semibold py-2 px-4 rounded-lg shadow-md transform hover:scale-105 transition-all w-full sm:w-auto">Salvar Configurações Atuais</button>
+                    <button id="saveConfigButton" class="config-button text-white font-semibold py-2 px-4 rounded-lg shadow-md transform hover:scale-105 transition-all w-full sm:w-auto" data-i18n-key="saveConfig">Salvar Configurações Atuais</button>
                 </div>
                 <p id="configStatusMessage" class="text-xs text-slate-400 mt-2 text-center"></p>
             </div>
 
             <div class="mb-4">
-                <label for="rawData" class="block text-sm font-medium text-slate-300 mb-1">Dados Brutos do Discord:</label>
+                <label for="rawData" class="block text-sm font-medium text-slate-300 mb-1" data-i18n-key="rawDataLabel">Dados:</label>
                 <textarea id="rawData" rows="4" class="w-full p-3 bg-slate-700 text-slate-200-contrast border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500 placeholder-slate-500-contrast"></textarea>
             </div>
 
             <div class="mb-4 text-center">
-                <button id="analyzeFieldsButton" class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transform hover:scale-105 transition-all">Analisar Dados</button>
+                <button id="analyzeFieldsButton" class="bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transform hover:scale-105 transition-all" data-i18n-key="analyzeButton">Analisar Dados</button>
             </div>
             
             <div id="fieldsSelectionSection" class="mb-4 hidden">
-                <label class="block text-sm font-medium text-slate-300 mb-2">1. Selecione os campos que deseja manter:</label>
+                <label class="block text-sm font-medium text-slate-300 mb-2" data-i18n-key="step1Title">1. Selecione os campos que deseja manter:</label>
                 <div id="fieldsCheckboxesContainer"></div>
                 <div class="mt-2 text-right">
-                     <button id="selectAllFields" class="text-xs text-sky-400 hover:text-sky-300 mr-2">Selecionar Todos</button>
-                     <button id="deselectAllFields" class="text-xs text-sky-400 hover:text-sky-300">Desselecionar Todos</button>
+                     <button id="selectAllFields" class="text-xs text-sky-400 hover:text-sky-300 mr-2" data-i18n-key="selectAll">Selecionar Todos</button>
+                     <button id="deselectAllFields" class="text-xs text-sky-400 hover:text-sky-300" data-i18n-key="deselectAll">Desselecionar Todos</button>
                 </div>
             </div>
 
             <div id="ratiosSection" class="mb-4 hidden">
-                <label class="block text-sm font-medium text-slate-300 mb-2">2. Para aplicar ratio, marque o ativo e defina o valor:</label>
+                <label class="block text-sm font-medium text-slate-300 mb-2" data-i18n-key="step2Title">2. Para aplicar ratio, marque o ativo e defina o valor:</label>
                 <div id="ratiosInputContainer"></div>
-                <!-- Seção para Cálculo Automático Simplificada -->
                 <div class="auto-ratio-section">
-                    <h3 class="text-base font-medium text-slate-200 mb-3 text-center">Cálculo de Ratio Automático (Yahoo Finance)</h3>
+                    <h3 class="text-base font-medium text-slate-200 mb-3 text-center" data-i18n-key="autoRatioTitle">Cálculo de Ratio Automático (Yahoo Finance)</h3>
                     <div class="text-center">
-                        <button id="calculateAllRatiosButton" class="calc-button bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transform hover:scale-105 transition-all" disabled>Calcular Todos os Ratios</button>
+                        <button id="calculateAllRatiosButton" class="calc-button bg-teal-500 hover:bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transform hover:scale-105 transition-all" disabled data-i18n-key="calculateAllRatios">Calcular Todos os Ratios</button>
                     </div>
                      <p id="ratioCalcStatus" class="text-center text-xs text-yellow-300 h-4 mt-2"></p>
                 </div>
             </div>
 
             <div id="generateOutputButtonContainer" class="mb-4 text-center hidden">
-                <button id="generateOutputButton" class="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md transform hover:scale-105 transition-all">Gerar Saída Processada</button>
+                <button id="generateOutputButton" class="bg-sky-500 hover:bg-sky-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md transform hover:scale-105 transition-all" data-i18n-key="generateOutput">Gerar Saída Processada</button>
             </div>
 
             <div id="processedDataSection" class="mb-4 hidden">
-                <label for="processedData" class="block text-sm font-medium text-slate-300 mb-1">Dados Processados (Prévia):</label>
+                <label for="processedData" class="block text-sm font-medium text-slate-300 mb-1" data-i18n-key="processedDataLabel">Dados Processados (Prévia):</label>
                 <textarea id="processedData" rows="4" class="w-full p-3 bg-slate-700 text-slate-200-contrast border border-slate-600 rounded-lg readonly" readonly></textarea>
             </div>
             
             <div id="configureTxtButtonContainer" class="mb-4 text-center hidden">
-                <button id="configureTxtButton" class="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md transform hover:scale-105 transition-all">Configurar e Gerar Arquivos TXT</button>
+                <button id="configureTxtButton" class="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md transform hover:scale-105 transition-all" data-i18n-key="configureTxt">Configurar e Gerar Arquivos TXT</button>
             </div>
 
             <div id="txtConfigurationSection" class="mb-4 hidden">
-                <label class="block text-sm font-medium text-slate-300 mb-2">3. Configure os Nomes dos Campos para os Arquivos TXT:</label>
+                <label class="block text-sm font-medium text-slate-300 mb-2" data-i18n-key="step3Title">3. Configure os Nomes dos Campos para os Arquivos TXT:</label>
                 <div id="txtConfigContainer"></div>
                  <div class="mt-3 text-center">
-                    <button id="downloadTxtFilesButton" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transform hover:scale-105 transition-all mr-2 mb-2">Baixar Arquivos TXT Individuais</button>
+                    <button id="downloadTxtFilesButton" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md transform hover:scale-105 transition-all mr-2 mb-2" data-i18n-key="downloadIndividual">Baixar Arquivos TXT Individuais</button>
                 </div>
             </div>
             <div id="downloadLinksArea" class="mt-4 text-sm"></div>
 
         </main>
-        <footer class="mt-8 text-center"><p class="text-xs text-slate-500">Processador de Dados MM_Gex</p></footer>
+        <footer class="mt-8 text-center"><p class="text-xs text-slate-500" data-i18n-key="footer">Processador de Dados Gex</p></footer>
     </div>
 
     <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // --- INÍCIO DA SEÇÃO DE TRADUÇÃO (I18N) ---
+        const translations = {
+            en: {
+                loginTitle: "Login",
+                usernameLabel: "User",
+                passwordLabel: "Password",
+                loginButton: "Sign In",
+                loginError: "Invalid username or password.",
+                appTitle: "Gex Data Processor",
+                appSubtitle: "Paste data, analyze, set ratios, configure, and generate TXT files.",
+                configTitle: "Settings Management",
+                loadConfig: "Load Settings",
+                saveConfig: "Save Current Settings",
+                rawDataLabel: "Data:",
+                analyzeButton: "Analyze Data",
+                step1Title: "1. Select the fields to keep:",
+                selectAll: "Select All",
+                deselectAll: "Deselect All",
+                step2Title: "2. To apply a ratio, check the asset and set the value:",
+                autoRatioTitle: "Automatic Ratio Calculation (Yahoo Finance)",
+                calculateAllRatios: "Calculate All Ratios",
+                generateOutput: "Generate Processed Output",
+                processedDataLabel: "Processed Data (Preview):",
+                configureTxt: "Configure and Generate TXT Files",
+                step3Title: "3. Configure Field Names for TXT Files:",
+                downloadIndividual: "Download Individual TXT Files",
+                footer: "Gex Data Processor",
+                attention: "ATTENTION!",
+                deleteWarning: "It is essential to <strong class='font-bold text-yellow-300'>DELETE THE OLD FILES</strong> from the folder before downloading the new ones.",
+                deleteReason: "This ensures your plotting program reads only the latest data, avoiding errors.",
+                cancel: "Cancel",
+                confirmDelete: "Yes, I've deleted them. Proceed.",
+                configLoaded: `Configuration "{0}" loaded. Click "Analyze Data" to apply it.`,
+                configSaved: `Current settings saved to {0}`,
+                noValidData: "No valid data (ticker or field) found.",
+                noFieldsFound: "No data fields (e.g., Call Resistance, HVL) found, only tickers.",
+                noTickersForRatio: "No tickers available to set ratios (after exclusions).",
+                analysisDone: "Analysis complete. Define your settings.",
+                analysisDoneConfigLoaded: "Loaded configuration applied. For ratios, click the calculation button.",
+                noDataToProcess: "No data to process.",
+                noFieldsSelectedForTxt: "No fields were selected in Step 1 to configure for TXT.",
+                noDataForTxt: "No processed data to generate TXT files.",
+                noFilesGenerated: "No TXT files generated. Check settings and processed data.",
+                statusFetching: "Fetching prices...",
+                statusCalculatingVs: "Calculating vs {0}...",
+                statusDone: "All calculations complete!",
+                statusFailRef: "Failed to fetch reference price for {0}.",
+                statusFailTicker: "Failed to fetch price for {0}.",
+                statusInvalidPrice: "Invalid price for {0}."
+            },
+            pt: {
+                loginTitle: "Login",
+                usernameLabel: "Usuário",
+                passwordLabel: "Senha",
+                loginButton: "Entrar",
+                loginError: "Usuário ou senha inválidos.",
+                appTitle: "Processador de Dados Gex",
+                appSubtitle: "Cole os dados, analise, defina ratios, configure e gere arquivos TXT.",
+                configTitle: "Gerenciamento de Configurações",
+                loadConfig: "Carregar Configurações",
+                saveConfig: "Salvar Configurações Atuais",
+                rawDataLabel: "Dados:",
+                analyzeButton: "Analisar Dados",
+                step1Title: "1. Selecione os campos que deseja manter:",
+                selectAll: "Selecionar Todos",
+                deselectAll: "Desselecionar Todos",
+                step2Title: "2. Para aplicar ratio, marque o ativo e defina o valor:",
+                autoRatioTitle: "Cálculo de Ratio Automático (Yahoo Finance)",
+                calculateAllRatios: "Calcular Todos os Ratios",
+                generateOutput: "Gerar Saída Processada",
+                processedDataLabel: "Dados Processados (Prévia):",
+                configureTxt: "Configurar e Gerar Arquivos TXT",
+                step3Title: "3. Configure os Nomes dos Campos para os Arquivos TXT:",
+                downloadIndividual: "Baixar Arquivos TXT Individuais",
+                footer: "Processador de Dados Gex",
+                attention: "ATENÇÃO!",
+                deleteWarning: "É essencial <strong class='font-bold text-yellow-300'>DELETAR OS ARQUIVOS ANTIGOS</strong> da pasta antes de fazer o download dos novos.",
+                deleteReason: "Isso garante que seu programa de plotagem leia apenas os dados mais recentes, evitando erros.",
+                cancel: "Cancelar",
+                confirmDelete: "Sim, já deletei. Prosseguir.",
+                configLoaded: `Configuração "{0}" carregada. Clique em "Analisar Dados" para aplicá-la.`,
+                configSaved: `Configurações atuais salvas em {0}`,
+                noValidData: "Nenhum dado válido (ticker ou campo) encontrado.",
+                noFieldsFound: "Nenhum campo de dados (ex: Call Resistance, HVL) encontrado, apenas tickers.",
+                noTickersForRatio: "Nenhum ticker para definir ratios (após exclusões).",
+                analysisDone: "Análise concluída. Defina suas configurações.",
+                analysisDoneConfigLoaded: "Configuração carregada aplicada. Para os ratios, clique no botão de cálculo.",
+                noDataToProcess: "Nenhum dado para processar.",
+                noFieldsSelectedForTxt: "Nenhum campo foi selecionado na Etapa 1 para configurar para TXT.",
+                noDataForTxt: "Nenhum dado processado para gerar arquivos TXT.",
+                noFilesGenerated: "Nenhum arquivo TXT gerado. Verifique as configurações e os dados processados.",
+                statusFetching: "Buscando preços...",
+                statusCalculatingVs: "Calculando vs {0}...",
+                statusDone: "Todos os cálculos concluídos!",
+                statusFailRef: "Falha ao buscar preço de referência para {0}.",
+                statusFailTicker: "Falha ao buscar preço para {0}.",
+                statusInvalidPrice: "Preço inválido para {0}."
+            }
+        };
+
+        let currentLanguage = 'pt'; // Default language
+
+        function setLanguage(lang) {
+            currentLanguage = lang;
+            document.querySelectorAll('[data-i18n-key]').forEach(element => {
+                const key = element.getAttribute('data-i18n-key');
+                if (translations[lang] && translations[lang][key]) {
+                    // Use innerHTML to allow for strong tags in translations
+                    element.innerHTML = translations[lang][key];
+                }
+            });
+             document.querySelectorAll('[data-i18n-placeholder-key]').forEach(element => {
+                const key = element.getAttribute('data-i18n-placeholder-key');
+                if (translations[lang] && translations[lang][key]) {
+                    element.placeholder = translations[lang][key];
+                }
+            });
+
+            // Update language switcher visual state
+            document.querySelectorAll('.lang-button').forEach(btn => {
+                if (btn.dataset.lang === lang) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        document.querySelectorAll('.lang-button').forEach(button => {
+            button.addEventListener('click', () => {
+                setLanguage(button.dataset.lang);
+            });
+        });
+
+        // Initialize with default language
+        setLanguage('pt');
+        // --- FIM DA SEÇÃO DE TRADUÇÃO ---
+
+
         // ---- INÍCIO DA SEÇÃO DE LOGIN ----
         const loginOverlay = document.getElementById('loginOverlay');
         const appContainer = document.getElementById('appContainer');
@@ -243,7 +400,7 @@
                 appContainer.classList.remove('hidden');
             } else {
                 // Falha
-                loginError.textContent = "Usuário ou senha inválidos.";
+                loginError.textContent = translations[currentLanguage].loginError;
                 setTimeout(() => {
                     loginError.textContent = "";
                 }, 3000);
@@ -395,14 +552,14 @@
 
             fieldsCheckboxesContainer.innerHTML = ''; 
             if (originalFieldOrder.length === 0 && uniqueTickers.length === 0) {
-                fieldsCheckboxesContainer.innerHTML = '<p class="text-slate-400 text-sm">Nenhum dado válido (ticker ou campo) encontrado.</p>';
+                fieldsCheckboxesContainer.innerHTML = `<p class="text-slate-400 text-sm">${translations[currentLanguage].noValidData}</p>`;
                 fieldsSelectionSection.classList.remove('hidden');
                 ratiosSection.classList.add('hidden');
                 generateOutputButtonContainer.classList.add('hidden');
                 processedDataSection.classList.add('hidden');
                 configureTxtButtonContainer.classList.add('hidden');
                 txtConfigurationSection.classList.add('hidden');
-                configStatusMessage.textContent = "Análise concluída. Nenhuma configuração carregada ou dados insuficientes.";
+                configStatusMessage.textContent = translations[currentLanguage].analysisDoneConfigLoaded;
                 return;
             }
 
@@ -424,7 +581,7 @@
                 applyLoadedConfigStep1(); 
                 fieldsSelectionSection.classList.remove('hidden');
             } else {
-                 fieldsCheckboxesContainer.innerHTML = '<p class="text-slate-400 text-sm">Nenhum campo de dados encontrado.</p>';
+                 fieldsCheckboxesContainer.innerHTML = `<p class="text-slate-400 text-sm">${translations[currentLanguage].noFieldsFound}</p>`;
                  fieldsSelectionSection.classList.remove('hidden');
             }
 
@@ -466,7 +623,7 @@
                 });
                 ratiosSection.classList.remove('hidden');
             } else {
-                 ratiosInputContainer.innerHTML = '<p class="text-slate-400 text-sm">Nenhum ticker para definir ratios (após exclusões).</p>';
+                 ratiosInputContainer.innerHTML = `<p class="text-slate-400 text-sm">${translations[currentLanguage].noTickersForRatio}</p>`;
                  ratiosSection.classList.remove('hidden'); 
             }
             
@@ -481,12 +638,20 @@
             processedDataTextarea.value = '';
             downloadLinksArea.innerHTML = '';
             if(loadedConfiguration) {
-                configStatusMessage.textContent = "Configuração carregada aplicada. Para os ratios, clique no botão de cálculo.";
+                configStatusMessage.textContent = translations[currentLanguage].analysisDoneConfigLoaded;
             } else {
-                configStatusMessage.textContent = "Análise concluída. Defina suas configurações.";
+                configStatusMessage.textContent = translations[currentLanguage].analysisDone;
             }
         });
         
+        selectAllFieldsButton.addEventListener('click', () => {
+            fieldsCheckboxesContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+        });
+
+        deselectAllFieldsButton.addEventListener('click', () => {
+            fieldsCheckboxesContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        });
+
         generateOutputButton.addEventListener('click', () => {
             const selectedFields = Array.from(fieldsCheckboxesContainer.querySelectorAll('input[type="checkbox"]:checked'))
                                       .map(cb => cb.value);
@@ -561,12 +726,12 @@
                  txtConfigurationSection.classList.add('hidden');
                  downloadLinksArea.innerHTML = '';
             } else if (cachedCleanedLines.length > 0 && selectedFields.length > 0){
-                processedDataTextarea.value = "Nenhum dos campos selecionados foi encontrado nos dados fornecidos.";
+                processedDataTextarea.value = translations[currentLanguage].noDataToProcess;
                 processedDataSection.classList.remove('hidden');
                 configureTxtButtonContainer.classList.add('hidden');
                 txtConfigurationSection.classList.add('hidden');
             } else {
-                 processedDataTextarea.value = "Nenhum dado para processar.";
+                 processedDataTextarea.value = translations[currentLanguage].noDataToProcess;
                  processedDataSection.classList.remove('hidden');
                  configureTxtButtonContainer.classList.add('hidden');
                  txtConfigurationSection.classList.add('hidden');
@@ -579,7 +744,7 @@
                                                .map(cb => cb.value);
 
             if (selectedFieldsFromStep1.length === 0) {
-                txtConfigContainer.innerHTML = '<p class="text-slate-400 text-sm">Nenhum campo foi selecionado na Etapa 1 para configurar para TXT.</p>';
+                txtConfigContainer.innerHTML = `<p class="text-slate-400 text-sm">${translations[currentLanguage].noFieldsSelectedForTxt}</p>`;
                 txtConfigurationSection.classList.remove('hidden');
                 return;
             }
@@ -670,7 +835,13 @@
             const day = String(targetDate.getDate()).padStart(2, '0');
             const month = String(targetDate.getMonth() + 1).padStart(2, '0'); 
             const year = targetDate.getFullYear();
-            const formattedDate = `${day}/${month}/${year}`;
+            
+            let formattedDate;
+            if (currentLanguage === 'en') {
+                formattedDate = `${month}/${day}/${year}`;
+            } else {
+                formattedDate = `${day}/${month}/${year}`;
+            }
 
             const txtConfigs = {};
             txtConfigContainer.querySelectorAll('.txt-config-item').forEach(item => {
@@ -683,7 +854,7 @@
             });
 
             if (Object.keys(currentProcessedData).length === 0) {
-                downloadLinksArea.innerHTML = '<p class="text-red-400">Nenhum dado processado para gerar arquivos TXT.</p>';
+                downloadLinksArea.innerHTML = `<p class="text-red-400">${translations[currentLanguage].noDataForTxt}</p>`;
                 return;
             }
             
@@ -700,7 +871,7 @@
                     const link = document.createElement('a');
                     link.href = url;
                     link.download = `${baseFilename}.txt`; 
-                    link.textContent = `Baixar ${link.download}`;
+                    link.textContent = `${translations[currentLanguage].download} ${link.download}`;
                     link.className = "inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1 px-3 rounded-md text-xs mr-2 mb-2";
                     
                     const p = document.createElement('p');
@@ -710,7 +881,7 @@
                 }
             }
             if(filesGenerated === 0){
-                downloadLinksArea.innerHTML = '<p class="text-yellow-400">Nenhum arquivo TXT gerado. Verifique as configurações e os dados processados.</p>';
+                downloadLinksArea.innerHTML = `<p class="text-yellow-400">${translations[currentLanguage].noFilesGenerated}</p>`;
             }
         }
         
@@ -739,7 +910,10 @@
                         const config = JSON.parse(e.target.result);
                         if (config && config.version === 1) { 
                             loadedConfiguration = config;
-                            configStatusMessage.textContent = `Configuração "${file.name}" carregada. Clique em "Analisar Dados" para aplicá-la.`;
+                            if (config.language) {
+                                setLanguage(config.language);
+                            }
+                            configStatusMessage.textContent = translations[currentLanguage].configLoaded.replace('{0}', file.name);
                             configStatusMessage.className = "text-xs text-green-400 mt-2 text-center";
                             fileUploadConfig.value = '';
                         } else {
@@ -788,6 +962,7 @@
 
             const currentFullConfiguration = {
                 version: 1,
+                language: currentLanguage,
                 selectedFieldsStep1: selectedFieldsStep1,
                 ratioSettingsStep2: ratioSettingsStep2,
                 txtConfigsStep3: txtConfigsStep3
@@ -797,13 +972,14 @@
             const blob = new Blob([configString], { type: 'application/json;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
+            const filename = 'gex_configs.json';
             link.href = url;
-            link.download = 'mm_gex_configs.json'; 
+            link.download = filename; 
             document.body.appendChild(link); 
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
-            configStatusMessage.textContent = `Configurações atuais salvas em ${link.download}`;
+            configStatusMessage.textContent = translations[currentLanguage].configSaved.replace('{0}', filename);
             configStatusMessage.className = "text-xs text-green-400 mt-2 text-center";
         });
 
@@ -847,7 +1023,7 @@
                 } catch (error) {
                     console.error(`Falha ao buscar preço para ${apiSymbol} (tentativa ${i + 1}):`, error);
                     if (i < retries - 1) {
-                        ratioCalcStatus.textContent = `Falha (${apiSymbol}). Tentando novamente...`;
+                        ratioCalcStatus.textContent = translations[currentLanguage].statusFailTicker.replace('{0}', apiSymbol);
                         await new Promise(resolve => setTimeout(resolve, delay));
                     } else {
                         ratioCalcStatus.textContent = `Falha definitiva ao buscar ${apiSymbol}.`;
@@ -860,11 +1036,11 @@
 
 
         async function performRatioCalculation(refSymbolKey, tickersToUpdate) {
-            ratioCalcStatus.textContent = `Buscando preços...`;
+            ratioCalcStatus.textContent = translations[currentLanguage].statusFetching;
             
             const refData = await fetchPrice(tickerMapping[refSymbolKey]);
              if (!refData) {
-                ratioCalcStatus.textContent = `Falha ao buscar preço de referência para ${refSymbolKey}.`;
+                ratioCalcStatus.textContent = translations[currentLanguage].statusFailRef.replace('{0}', refSymbolKey);
                 return false;
             }
 
@@ -899,11 +1075,11 @@
                             checkbox.checked = true;
                             input.disabled = false;
                         } else {
-                            ratioCalcStatus.textContent = `Preço inválido para ${ticker}.`;
+                            ratioCalcStatus.textContent = translations[currentLanguage].statusInvalidPrice.replace('{0}', ticker);
                             return false;
                         }
                     } else {
-                        ratioCalcStatus.textContent = `Falha ao buscar preço para ${ticker}.`;
+                        ratioCalcStatus.textContent = translations[currentLanguage].statusFailTicker.replace('{0}', ticker);
                         return false;
                     }
                 }
@@ -941,7 +1117,7 @@
                 }
             }
             
-            ratioCalcStatus.textContent = 'Todos os cálculos concluídos!';
+            ratioCalcStatus.textContent = translations[currentLanguage].statusDone;
             setTimeout(() => {
                 ratioCalcStatus.textContent = '';
                 calculateAllRatiosButton.disabled = false;
@@ -953,4 +1129,3 @@
 
 </body>
 </html>
-
