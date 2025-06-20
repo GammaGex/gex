@@ -103,13 +103,17 @@
             cursor: not-allowed;
         }
         .lang-button {
-            opacity: 0.5;
-            transition: opacity 0.2s;
+            opacity: 0.7;
+            transition: all 0.2s ease-in-out;
+        }
+        .lang-button:hover {
+            opacity: 1;
+            transform: scale(1.1);
         }
         .lang-button.active {
             opacity: 1;
-            transform: scale(1.1);
-            box-shadow: 0 0 10px rgba(14, 165, 233, 0.7);
+            transform: scale(1.15);
+            box-shadow: 0 0 12px rgba(14, 165, 233, 0.7);
             border-radius: 50%;
         }
 
@@ -120,31 +124,39 @@
 
     <!-- Tela de Login -->
     <div id="loginOverlay" class="fixed inset-0 bg-slate-900 bg-opacity-95 flex items-center justify-center z-50">
-        <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-sm relative">
-            <!-- Seletor de Idioma -->
-            <div class="absolute top-4 right-4 flex gap-3">
-                <button data-lang="pt" class="lang-button">
-                    <img src="https://flagcdn.com/w20/br.png" alt="Português">
-                </button>
-                <button data-lang="en" class="lang-button">
-                    <img src="https://flagcdn.com/w20/us.png" alt="English">
-                </button>
-            </div>
-            <h2 class="text-2xl font-bold text-sky-400 text-center mb-6" data-i18n-key="loginTitle">Login</h2>
-            <div class="space-y-4">
-                <div>
-                    <label for="username" class="block text-sm font-medium text-slate-300 mb-1" data-i18n-key="usernameLabel">Usuário</label>
-                    <input type="text" id="username" class="w-full p-3 bg-slate-700 text-slate-200 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
-                </div>
-                <div>
-                    <label for="password" class="block text-sm font-medium text-slate-300 mb-1" data-i18n-key="passwordLabel">Senha</label>
-                    <input type="password" id="password" class="w-full p-3 bg-slate-700 text-slate-200 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+        <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-sm relative text-center">
+            <!-- Seção de Seleção de Idioma -->
+            <div id="languageSelection">
+                <h2 class="text-xl font-bold text-sky-400 mb-4">Selecione o Idioma / Select Language</h2>
+                <div class="flex gap-4 justify-center mb-6">
+                    <button data-lang="pt" class="lang-button">
+                        <img src="https://flagcdn.com/w40/br.png" alt="Português">
+                    </button>
+                    <button data-lang="en" class="lang-button">
+                        <img src="https://flagcdn.com/w40/us.png" alt="English">
+                    </button>
                 </div>
             </div>
-            <p id="loginError" class="text-red-400 text-sm text-center h-5 mt-4"></p>
-            <button id="loginButton" class="w-full mt-4 bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-lg shadow-md transform hover:scale-105 transition-all" data-i18n-key="loginButton">Entrar</button>
+            
+            <!-- Campos de Login (inicialmente ocultos) -->
+            <div id="loginFields" class="hidden text-left">
+                <h2 class="text-2xl font-bold text-sky-400 text-center mb-6" data-i18n-key="loginTitle">Login</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-slate-300 mb-1" data-i18n-key="usernameLabel">Usuário</label>
+                        <input type="text" id="username" class="w-full p-3 bg-slate-700 text-slate-200 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-slate-300 mb-1" data-i18n-key="passwordLabel">Senha</label>
+                        <input type="password" id="password" class="w-full p-3 bg-slate-700 text-slate-200 border border-slate-600 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500">
+                    </div>
+                </div>
+                <p id="loginError" class="text-red-400 text-sm text-center h-5 mt-4"></p>
+                <button id="loginButton" class="w-full mt-4 bg-sky-500 hover:bg-sky-600 text-white font-semibold py-3 rounded-lg shadow-md transform hover:scale-105 transition-all" data-i18n-key="loginButton">Entrar</button>
+            </div>
         </div>
     </div>
+
 
     <!-- Modal de Confirmação para Deletar Arquivos Antigos -->
     <div id="confirmDeleteModal" class="hidden fixed inset-0 bg-slate-900 bg-opacity-80 flex items-center justify-center z-50 p-4">
@@ -193,7 +205,10 @@
             <div id="fieldsSelectionSection" class="mb-4 hidden">
                 <label class="block text-sm font-medium text-slate-300 mb-2" data-i18n-key="step1Title">1. Selecione os campos que deseja manter:</label>
                 <div id="fieldsCheckboxesContainer"></div>
-                <!-- Botões Removidos -->
+                <div class="mt-2 text-right">
+                     <button id="selectAllFields" class="text-xs text-sky-400 hover:text-sky-300 mr-2" data-i18n-key="selectAll">Selecionar Todos</button>
+                     <button id="deselectAllFields" class="text-xs text-sky-400 hover:text-sky-300" data-i18n-key="deselectAll">Desselecionar Todos</button>
+                </div>
             </div>
 
             <div id="ratiosSection" class="mb-4 hidden">
@@ -336,7 +351,10 @@
             }
         };
 
-        let currentLanguage = 'pt'; // Default language
+        let currentLanguage = 'pt'; 
+
+        const languageSelectionDiv = document.getElementById('languageSelection');
+        const loginFieldsDiv = document.getElementById('loginFields');
 
         function setLanguage(lang) {
             currentLanguage = lang;
@@ -344,7 +362,6 @@
             document.querySelectorAll('[data-i18n-key]').forEach(element => {
                 const key = element.getAttribute('data-i18n-key');
                 if (translations[lang] && translations[lang][key]) {
-                    // Use innerHTML to allow for strong tags in translations
                     element.innerHTML = translations[lang][key];
                 }
             });
@@ -355,7 +372,6 @@
                 }
             });
 
-            // Update language switcher visual state
             document.querySelectorAll('.lang-button').forEach(btn => {
                 if (btn.dataset.lang === lang) {
                     btn.classList.add('active');
@@ -363,6 +379,9 @@
                     btn.classList.remove('active');
                 }
             });
+            
+            languageSelectionDiv.classList.add('hidden');
+            loginFieldsDiv.classList.remove('hidden');
         }
 
         document.querySelectorAll('.lang-button').forEach(button => {
@@ -370,12 +389,7 @@
                 setLanguage(button.dataset.lang);
             });
         });
-
-        // Initialize with default language
-        setLanguage('pt');
-        // --- FIM DA SEÇÃO DE TRADUÇÃO ---
-
-
+        
         // ---- INÍCIO DA SEÇÃO DE LOGIN ----
         const loginOverlay = document.getElementById('loginOverlay');
         const appContainer = document.getElementById('appContainer');
@@ -384,7 +398,6 @@
         const loginButton = document.getElementById('loginButton');
         const loginError = document.getElementById('loginError');
 
-        // --- Altere o usuário e a senha aqui ---
         const correctUser = "GEX";
         const correctPass = "GEX"; 
 
@@ -393,11 +406,9 @@
             const pass = passwordInput.value;
 
             if (user === correctUser && pass === correctPass) {
-                // Sucesso
                 loginOverlay.classList.add('hidden');
                 appContainer.classList.remove('hidden');
             } else {
-                // Falha
                 loginError.textContent = translations[currentLanguage].loginError;
                 setTimeout(() => {
                     loginError.textContent = "";
@@ -448,8 +459,6 @@
         let tickersForRatioDisplay = [];
         let currentProcessedData = {}; 
         let loadedConfiguration = null; 
-
-        // Restante do código...
 
         function parseDataLine(line) {
             const tickerEndIndex = line.indexOf(':');
@@ -642,6 +651,14 @@
             }
         });
         
+        selectAllFieldsButton.addEventListener('click', () => {
+            fieldsCheckboxesContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
+        });
+
+        deselectAllFieldsButton.addEventListener('click', () => {
+            fieldsCheckboxesContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        });
+
         generateOutputButton.addEventListener('click', () => {
             const selectedFields = Array.from(fieldsCheckboxesContainer.querySelectorAll('input[type="checkbox"]:checked'))
                                       .map(cb => cb.value);
@@ -1025,85 +1042,69 @@
         }
 
 
-        async function performRatioCalculation(refSymbolKey, tickersToUpdate) {
+        async function performRatioCalculation(formula, targetTicker) {
             ratioCalcStatus.textContent = translations[currentLanguage].statusFetching;
             
-            const refData = await fetchPrice(tickerMapping[refSymbolKey]);
-             if (!refData) {
-                ratioCalcStatus.textContent = translations[currentLanguage].statusFailRef.replace('{0}', refSymbolKey);
+            const [numeratorKey, denominatorKey] = formula.split('/');
+            const numeratorApiSymbol = tickerMapping[numeratorKey] || tickerMapping[`ref_${numeratorKey.toLowerCase()}`] || numeratorKey;
+            const denominatorApiSymbol = tickerMapping[denominatorKey] || tickerMapping[`ref_${denominatorKey.toLowerCase()}`] || denominatorKey;
+
+            const numeratorData = await fetchPrice(numeratorApiSymbol);
+            const denominatorData = await fetchPrice(denominatorApiSymbol);
+
+            if (!numeratorData || !denominatorData) {
+                ratioCalcStatus.textContent = `Falha ao buscar preços para ${formula}.`;
                 return false;
             }
 
-            for (const ticker of tickersToUpdate) {
-                const item = ratiosInputContainer.querySelector(`[data-ticker="${ticker}"]`)?.closest('.ratio-item-label');
-                if (!item) continue;
-                
-                const checkbox = item.querySelector('input[type="checkbox"]');
-                const input = item.querySelector('input[type="number"]');
-                const apiSymbol = tickerMapping[ticker];
+            const numeratorMarketOpen = numeratorData.marketState === 'REGULAR';
+            const denominatorMarketOpen = denominatorData.marketState === 'REGULAR';
+            const priceType = (numeratorMarketOpen && denominatorMarketOpen) ? 'current' : 'previousClose';
 
-                if (apiSymbol) {
-                    ratioCalcStatus.textContent = `Buscando preço para ${apiSymbol}...`;
-                    const data = await fetchPrice(apiSymbol);
-                    if (data) {
-                        const refMarketOpen = refData.marketState === 'REGULAR';
-                        const targetMarketOpen = data.marketState === 'REGULAR';
-                        
-                        let priceType;
-                        if (refMarketOpen && targetMarketOpen) {
-                            priceType = 'current';
-                        } else {
-                            priceType = 'previousClose';
-                        }
-                        
-                        const refPrice = (priceType === 'previousClose') ? refData.previousClose : refData.price;
-                        const price = (priceType === 'previousClose') ? data.previousClose : data.price;
+            const numeratorPrice = (priceType === 'previousClose') ? numeratorData.previousClose : numeratorData.price;
+            const denominatorPrice = (priceType === 'previousClose') ? denominatorData.previousClose : denominatorData.price;
+            
+            const item = ratiosInputContainer.querySelector(`[data-ticker="${targetTicker}"]`)?.closest('.ratio-item-label');
+            if (!item) return true; // Se o item não está no ecrã, não há erro
+            
+            const checkbox = item.querySelector('input[type="checkbox"]');
+            const input = item.querySelector('input[type="number"]');
 
-                        if (price && price > 0) {
-                            const calculatedRatio = refPrice / price;
-                            input.value = calculatedRatio.toFixed(8);
-                            checkbox.checked = true;
-                            input.disabled = false;
-                        } else {
-                            ratioCalcStatus.textContent = translations[currentLanguage].statusInvalidPrice.replace('{0}', ticker);
-                            return false;
-                        }
-                    } else {
-                        ratioCalcStatus.textContent = translations[currentLanguage].statusFailTicker.replace('{0}', ticker);
-                        return false;
-                    }
-                }
+            if (denominatorPrice && denominatorPrice > 0) {
+                 const calculatedRatio = numeratorPrice / denominatorPrice;
+                 input.value = calculatedRatio.toFixed(8);
+                 checkbox.checked = true;
+                 input.disabled = false;
+                 return true;
+            } else {
+                ratioCalcStatus.textContent = translations[currentLanguage].statusInvalidPrice.replace('{0}', denominatorKey);
+                return false;
             }
-             return true; 
         }
 
         calculateAllRatiosButton.addEventListener('click', async () => {
             const tickersSet = new Set(uniqueTickers);
-            const hasEsTickers = tickersSet.has('$SPX:') || tickersSet.has('$SPY:');
-            const hasNqTickers = tickersSet.has('$NDX:') || tickersSet.has('$QQQ:');
-            const hasGldTicker = tickersSet.has('$GLD:');
             
             calculateAllRatiosButton.disabled = true;
 
-            if (hasEsTickers) {
-                const success = await performRatioCalculation('ref_es', ['$SPX:', '$SPY:']);
-                if (!success) {
-                    calculateAllRatiosButton.disabled = false;
-                    return;
-                }
-            }
-            if (hasNqTickers) {
-                const success = await performRatioCalculation('ref_nq', ['$NDX:', '$QQQ:']);
-                if (!success) {
-                    calculateAllRatiosButton.disabled = false;
-                    return;
-                }
-            }
-            if (hasGldTicker) {
-                const success = await performRatioCalculation('ref_gc', ['$GLD:']);
-                 if (!success) {
-                    calculateAllRatiosButton.disabled = false;
-                    return;
+            const calculations = {
+                es: { has: tickersSet.has('$SPX:') || tickersSet.has('$SPY:'), formulas: {'$SPX:': 'ES=F/^GSPC', '$SPY:': 'ES=F/SPY'} },
+                nq: { has: tickersSet.has('$NDX:') || tickersSet.has('$QQQ:'), formulas: {'$NDX:': 'NQ=F/^NDX', '$QQQ:': 'NQ=F/QQQ'} },
+                gc: { has: tickersSet.has('$GLD:'), formulas: {'$GLD:': 'GC=F/GLD'} }
+            };
+
+            for (const group in calculations) {
+                if (calculations[group].has) {
+                    for (const ticker in calculations[group].formulas) {
+                         if(tickersSet.has(ticker)) {
+                            const formula = calculations[group].formulas[ticker];
+                            const success = await performRatioCalculation(formula, ticker);
+                            if (!success) {
+                                calculateAllRatiosButton.disabled = false;
+                                return;
+                            }
+                         }
+                    }
                 }
             }
             
