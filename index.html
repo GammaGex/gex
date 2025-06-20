@@ -684,7 +684,7 @@
                             if (assetRatio !== 1) { 
                                 valueForStorage = numericValue * assetRatio;
                             }
-                            processedFieldValueForPreview = valueForStorage.toFixed(2).replace('.', ',');
+                            processedFieldValueForPreview = (currentLanguage === 'en') ? valueForStorage.toFixed(2) : valueForStorage.toFixed(2).replace('.', ',');
                             currentProcessedData[ticker][fieldName] = valueForStorage; 
                         } else {
                              currentProcessedData[ticker][fieldName] = originalFieldValue; 
@@ -786,7 +786,7 @@
                 if (assetData.hasOwnProperty(originalFieldName) && txtConfigs.hasOwnProperty(originalFieldName)) {
                     let value = assetData[originalFieldName]; 
                     if (typeof value === 'number') {
-                        value = value.toString().replace('.', ',');
+                        value = (currentLanguage === 'en') ? value.toFixed(8) : value.toFixed(8).replace('.', ',');
                     }
                     if (!valueToFieldConfigsMap.has(value)) {
                         valueToFieldConfigsMap.set(value, []);
@@ -1084,7 +1084,7 @@
             const hasGldTicker = tickersSet.has('$GLD:');
             
             calculateAllRatiosButton.disabled = true;
-            
+
             if (hasEsTickers) {
                 const success = await performRatioCalculation('ref_es', ['$SPX:', '$SPY:']);
                 if (!success) {
